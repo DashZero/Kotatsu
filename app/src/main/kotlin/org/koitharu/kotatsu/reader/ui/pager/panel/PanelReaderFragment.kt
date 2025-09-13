@@ -22,7 +22,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koitharu.kotatsu.R
-import org.koitharu.kotatsu.core.exceptions.resolve.ExceptionResolver
 import org.koitharu.kotatsu.core.os.NetworkState
 import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.core.prefs.ReaderMode
@@ -49,8 +48,7 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
     @Inject
     lateinit var settings: AppSettings
 
-    @Inject
-    lateinit var exceptionResolver: ExceptionResolver
+    // Use ExceptionResolver from BaseFragment via EntryPoint factory
 
     @Inject
     lateinit var networkState: NetworkState
