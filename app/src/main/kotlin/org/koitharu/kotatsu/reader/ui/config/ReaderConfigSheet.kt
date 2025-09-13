@@ -74,18 +74,19 @@ class ReaderConfigSheet :
 		return SheetReaderConfigBinding.inflate(inflater, container, false)
 	}
 
-	override fun onViewBindingCreated(
-		binding: SheetReaderConfigBinding,
-		savedInstanceState: Bundle?,
-	) {
-		super.onViewBindingCreated(binding, savedInstanceState)
-		observeScreenOrientation()
-		binding.buttonStandard.isChecked = mode == ReaderMode.STANDARD
-		binding.buttonReversed.isChecked = mode == ReaderMode.REVERSED
-		binding.buttonWebtoon.isChecked = mode == ReaderMode.WEBTOON
-		binding.buttonVertical.isChecked = mode == ReaderMode.VERTICAL
-		binding.switchDoubleReader.isChecked = settings.isReaderDoubleOnLandscape
-		binding.switchDoubleReader.isEnabled = mode == ReaderMode.STANDARD || mode == ReaderMode.REVERSED
+		override fun onViewBindingCreated(
+			binding: SheetReaderConfigBinding,
+			savedInstanceState: Bundle?,
+		) {
+			super.onViewBindingCreated(binding, savedInstanceState)
+			observeScreenOrientation()
+			binding.buttonStandard.isChecked = mode == ReaderMode.STANDARD
+			binding.buttonReversed.isChecked = mode == ReaderMode.REVERSED
+			binding.buttonWebtoon.isChecked = mode == ReaderMode.WEBTOON
+			binding.buttonVertical.isChecked = mode == ReaderMode.VERTICAL
+			binding.buttonPanel?.isChecked = mode == ReaderMode.PANEL
+			binding.switchDoubleReader.isChecked = settings.isReaderDoubleOnLandscape
+			binding.switchDoubleReader.isEnabled = mode == ReaderMode.STANDARD || mode == ReaderMode.REVERSED
 
 		binding.checkableGroup.addOnButtonCheckedListener(this)
 		binding.buttonSavePage.setOnClickListener(this)
@@ -175,28 +176,29 @@ class ReaderConfigSheet :
 		}
 	}
 
-	override fun onButtonChecked(
-		group: MaterialButtonToggleGroup?,
-		checkedId: Int,
-		isChecked: Boolean,
-	) {
-		if (!isChecked) {
-			return
+		override fun onButtonChecked(
+			group: MaterialButtonToggleGroup?,
+			checkedId: Int,
+			isChecked: Boolean,
+		) {
+			if (!isChecked) {
+				return
+			}
+			val newMode = when (checkedId) {
+				R.id.button_standard -> ReaderMode.STANDARD
+				R.id.button_webtoon -> ReaderMode.WEBTOON
+				R.id.button_reversed -> ReaderMode.REVERSED
+				R.id.button_vertical -> ReaderMode.VERTICAL
+				R.id.button_panel -> ReaderMode.PANEL
+				else -> return
+			}
+			viewBinding?.switchDoubleReader?.isEnabled = newMode == ReaderMode.STANDARD || newMode == ReaderMode.REVERSED
+			if (newMode == mode) {
+				return
+			}
+			findParentCallback(Callback::class.java)?.onReaderModeChanged(newMode) ?: return
+			mode = newMode
 		}
-		val newMode = when (checkedId) {
-			R.id.button_standard -> ReaderMode.STANDARD
-			R.id.button_webtoon -> ReaderMode.WEBTOON
-			R.id.button_reversed -> ReaderMode.REVERSED
-			R.id.button_vertical -> ReaderMode.VERTICAL
-			else -> return
-		}
-		viewBinding?.switchDoubleReader?.isEnabled = newMode == ReaderMode.STANDARD || newMode == ReaderMode.REVERSED
-		if (newMode == mode) {
-			return
-		}
-		findParentCallback(Callback::class.java)?.onReaderModeChanged(newMode) ?: return
-		mode = newMode
-	}
 
 	private fun observeScreenOrientation() {
 		orientationHelper.observeAutoOrientation()

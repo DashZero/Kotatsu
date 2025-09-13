@@ -693,6 +693,7 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_READER_CONTROLS = "reader_controls"
 		const val KEY_READER_MODE = "reader_mode"
 		const val KEY_READER_MODE_DETECT = "reader_mode_detect"
+		const val KEY_PANEL_REDUCE_ANIMATIONS = "panel_reduce_animations"
 		const val KEY_READER_CROP = "reader_crop"
 		const val KEY_APP_PASSWORD = "app_password"
 		const val KEY_APP_PASSWORD_NUMERIC = "app_password_num"
@@ -826,4 +827,6 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		private const val READER_CROP_PAGED = 1
 		private const val READER_CROP_WEBTOON = 2
 	}
+	val isPanelReduceAnimations: Boolean
+		get() = prefs.getBoolean(KEY_PANEL_REDUCE_ANIMATIONS, false)
 }

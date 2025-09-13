@@ -69,6 +69,7 @@ class ReaderManager(
 		}
 		modeMap[ReaderMode.WEBTOON] = WebtoonReaderFragment::class.java
 		modeMap[ReaderMode.VERTICAL] = VerticalReaderFragment::class.java
+		modeMap[ReaderMode.PANEL] = org.koitharu.kotatsu.reader.ui.pager.panel.PanelReaderFragment::class.java
 	}
 
 	private fun isLandscape() = container.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE

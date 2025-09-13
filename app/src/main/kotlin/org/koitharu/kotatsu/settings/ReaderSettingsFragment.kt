@@ -7,6 +7,7 @@ import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.MultiSelectListPreference
 import androidx.preference.Preference
+import androidx.preference.PreferenceManager
 import dagger.hilt.android.AndroidEntryPoint
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.model.ZoomMode
@@ -92,6 +93,15 @@ class ReaderSettingsFragment :
 	override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
 		when (key) {
 			AppSettings.KEY_READER_MODE -> updateReaderModeDependency()
+			"panel_view_enabled" -> {
+				val enabled = sharedPreferences?.getBoolean("panel_view_enabled", false) == true
+				val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+				if (enabled) {
+					prefs.edit().putString(AppSettings.KEY_READER_MODE, ReaderMode.PANEL.name).apply()
+				} else if (settings.defaultReaderMode == ReaderMode.PANEL) {
+					prefs.edit().putString(AppSettings.KEY_READER_MODE, ReaderMode.STANDARD.name).apply()
+				}
+			}
 		}
 	}
 

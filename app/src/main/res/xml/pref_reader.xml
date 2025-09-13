@@ -11,6 +11,11 @@
 		app:useSimpleSummaryProvider="true" />
 
 	<SwitchPreferenceCompat
+		android:defaultValue="false"
+		android:key="panel_view_enabled"
+		android:title="@string/enable_panel_view" />
+
+	<SwitchPreferenceCompat
 		android:defaultValue="true"
 		android:key="reader_mode_detect"
 		android:summary="@string/detect_reader_mode_summary"
@@ -34,6 +39,12 @@
 		android:key="webtoon_zoom"
 		android:summary="@string/webtoon_zoom_summary"
 		android:title="@string/webtoon_zoom" />
+
+	<SwitchPreferenceCompat
+		android:defaultValue="false"
+		android:key="panel_reduce_animations"
+		android:summary="@string/reduce_animations_summary"
+		android:title="@string/reduce_animations" />
 
 	<org.koitharu.kotatsu.settings.utils.SliderPreference
 		android:dependency="webtoon_zoom"
