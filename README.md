@@ -1,4 +1,4 @@
-<div align="center">
+<div style="text-align: center;">
 
 <a href="https://kotatsu.app">
     <img src="./.github/assets/vtuber.png" alt="Kotatsu Logo" title="Kotatsu" width="600"/>
@@ -12,7 +12,7 @@
 
 ### Download
 
-<div align="left">
+<div style="text-align: left;">
 
 * **Recommended:** Download and install APK from [GitHub Releases](https://github.com/KotatsuApp/Kotatsu/releases/latest). Application has a built-in self-updating feature.
 * Get it on [F-Droid](https://f-droid.org/packages/org.koitharu.kotatsu). The F-Droid build may be a bit outdated and some fixes might be missing.
@@ -22,7 +22,7 @@
 
 ### Main Features
 
-<div align="left">
+<div style="text-align: left;">
 
 * Online [manga catalogues](https://github.com/KotatsuApp/kotatsu-parsers) (with 1200+ manga sources)
 * Search manga by name, genres and more filters
@@ -41,7 +41,7 @@
 
 ### In-App Screenshots
 
-<div align="center">
+<div style="text-align: center;">
     <img src="./metadata/en-US/images/phoneScreenshots/1.png" alt="Mobile view" width="250"/>
     <img src="./metadata/en-US/images/phoneScreenshots/2.png" alt="Mobile view" width="250"/>
     <img src="./metadata/en-US/images/phoneScreenshots/3.png" alt="Mobile view" width="250"/>
@@ -52,7 +52,7 @@
 
 <br>
 
-<div align="center">
+<div style="text-align: center;">
     <img src="./metadata/en-US/images/tenInchScreenshots/1.png" alt="Tablet view" width="400"/>
     <img src="./metadata/en-US/images/tenInchScreenshots/2.png" alt="Tablet view" width="400"/>
 </div>
@@ -82,9 +82,9 @@ please head over to the [Weblate project page](https://hosted.weblate.org/engage
     <source srcset="https://github-readme-stats.vercel.app/api/pin/?username=KotatsuApp&repo=Kotatsu-parsers&bg_color=0d1117&text_color=1976d2&title_color=1976d2&icon_color=0877d2&border_radius=10&description_lines_count=2&show_owner=true" media="(prefers-color-scheme: dark)">
     <img src="https://github-readme-stats.vercel.app/api/pin/?username=KotatsuApp&repo=Kotatsu-parsers&text_color=1976d2&title_color=1976d2&icon_color=0877d2&border_radius=10&description_lines_count=2&show_owner=true" alt="Kotatsu-parsers GitHub Repository">
   </picture>
-</a><br></br>
+</a><br />
 
-</br>
+<br />
 
 **📌 Pull requests are welcome, if you want: See [CONTRIBUTING.md](https://github.com/KotatsuApp/Kotatsu/blob/devel/CONTRIBUTING.md) for the guidelines**
 
@@ -102,7 +102,7 @@ please head over to the [Weblate project page](https://hosted.weblate.org/engage
 
 [![GNU GPLv3 Image](https://www.gnu.org/graphics/gplv3-127x51.png)](http://www.gnu.org/licenses/gpl-3.0.en.html)
 
-<div align="left">
+<div style="text-align: left;">
 
 You may copy, distribute and modify the software as long as you track changes/dates in source files. Any modifications to or software including (via compiler) GPL-licensed code must also be made available under the GPL along with build & install instructions.
 
@@ -110,8 +110,9 @@ You may copy, distribute and modify the software as long as you track changes/da
 
 ### DMCA disclaimer
 
-<div align="left">
+<div style="text-align: left;">
 
 The developers of this application do not have any affiliation with the content available in the app. It collects content from sources that are freely available through any web browser.
 
+</div>
 </div>

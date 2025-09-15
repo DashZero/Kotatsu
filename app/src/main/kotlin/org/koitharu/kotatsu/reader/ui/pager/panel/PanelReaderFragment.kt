@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.net.toFile
 import androidx.core.view.isVisible
+import com.davemorrissey.labs.subscaleview.DefaultOnImageEventListener
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import kotlinx.coroutines.withContext
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.os.NetworkState
@@ -27,10 +29,11 @@ import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.core.prefs.ReaderMode
 import org.koitharu.kotatsu.core.util.ext.observe
 import org.koitharu.kotatsu.databinding.FragmentReaderPanelBinding
-import org.koitharu.kotatsu.panelview.PanelOrder
-import org.koitharu.kotatsu.panelview.PanelReaderController
-import org.koitharu.kotatsu.panelview.PanelReaderState
-import org.koitharu.kotatsu.panelview.detection.PanelDetector
+import org.kotatsu.panelview.PanelOrder
+import org.kotatsu.panelview.PanelReaderController
+import org.kotatsu.panelview.PanelReaderState
+import org.kotatsu.panelview.detection.PanelDetector
+import android.util.Log
 import org.koitharu.kotatsu.reader.domain.PageLoader
 import org.koitharu.kotatsu.reader.ui.ReaderState
 import org.koitharu.kotatsu.reader.ui.pager.BaseReaderAdapter
@@ -65,13 +68,17 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
     private var controller: PanelReaderController? = null
 
     private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
+        override fun onDown(e: MotionEvent): Boolean = true
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
             val w = viewBinding?.gestureOverlay?.width ?: return false
-            val forward = if (!isRtlPanels) e.x > w / 2f else e.x < w / 2f
-            if (forward) {
-                next()
-            } else {
-                prev()
+            val third = w / 3f
+            when {
+                // left third => prev
+                e.x < third -> prev()
+                // right third => next / start panels
+                e.x > w - third -> next()
+                // center => toggle reader UI (toolbar & controls)
+                else -> (activity as? org.koitharu.kotatsu.reader.ui.ReaderActivity)?.toggleUiVisibility()
             }
             return true
         }
@@ -79,6 +86,23 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
         override fun onDoubleTap(e: MotionEvent): Boolean {
             toggleFullPage()
             return true
+        }
+
+        override fun onFling(
+            e1: MotionEvent?,
+            e2: MotionEvent,
+            velocityX: Float,
+            velocityY: Float,
+        ): Boolean {
+            val dx = (e2.x) - (e1?.x ?: 0f)
+            val absDx = kotlin.math.abs(dx)
+            val absVy = kotlin.math.abs(velocityY)
+            if (absDx > 80 && absVy < 3000f) {
+                val forward = if (!isRtlPanels) dx < 0 else dx > 0
+                if (forward) next() else prev()
+                return true
+            }
+            return false
         }
     }
 
@@ -102,8 +126,11 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
         }
 
         gestureDetector = GestureDetector(binding.root.context, gestureListener)
+        binding.gestureOverlay.isClickable = true
+        binding.gestureOverlay.isFocusable = true
         binding.gestureOverlay.setOnTouchListener { _, event ->
             gestureDetector.onTouchEvent(event)
+            true // consume so underlying views don't conflict
         }
 
         // basic SSIV defaults
@@ -111,8 +138,7 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
             setMinimumDpi(80)
             maxScale = 8f
             setDoubleTapZoomDpi(160)
-            setQuickScaleEnabled(false)
-            setPanEnabled(false) // we drive panning ourselves for guided view
+            // Keep default pan/quick-scale behavior from the library
         }
 
         // apply background from reader settings
@@ -172,7 +198,11 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
     private fun next() {
         val c = controller
         if (c == null) return
-        if (c.nextPanel()) {
+        if (fullPageMode) {
+            fullPageMode = false
+            panelIndex = c.getState().currentIndex
+            focusPanel(c.getState().currentPanel, animate = !reduceAnimations)
+        } else if (c.nextPanel()) {
             panelIndex = c.getState().currentIndex
             focusPanel(c.getState().currentPanel, animate = !reduceAnimations)
         } else if (pageIndex < pages.lastIndex) {
@@ -183,7 +213,11 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
     private fun prev() {
         val c = controller
         if (c == null) return
-        if (c.prevPanel()) {
+        if (fullPageMode) {
+            if (pageIndex > 0) {
+                showPage(pageIndex - 1, restorePanelIndex = Int.MAX_VALUE)
+            }
+        } else if (c.prevPanel()) {
             panelIndex = c.getState().currentIndex
             focusPanel(c.getState().currentPanel, animate = !reduceAnimations)
         } else if (pageIndex > 0) {
@@ -199,6 +233,8 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
             // fit center
             ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
             ssiv.resetScaleAndCenter()
+            viewBinding?.maskOverlay?.setPanelRect(null)
+            viewBinding?.maskOverlay?.visibility = View.GONE
         } else {
             focusPanel(c.getState().currentPanel, animate = !reduceAnimations)
         }
@@ -218,10 +254,22 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
             val uri = withContext(Dispatchers.Default) { pageLoader.loadPage(page.toMangaPage(), force = false) }
             // Decode downsized bitmap for detection
             val localUri = withContext(Dispatchers.Default) { pageLoader.convertBimap(uri) }
-            val bitmap = withContext(Dispatchers.Default) { decodeBitmapForDetection(localUri) }
-            val rects = PanelDetector.detectPanels(bitmap)
-            val ordered = PanelOrder.order(rects, rtl = isRtlPanels)
-            val panels = if (ordered.isNotEmpty()) ordered else listOf(Rect(0, 0, bitmap.width, bitmap.height))
+            val detection = withContext(Dispatchers.Default) { decodeBitmapForDetection(localUri) }
+            val rects = PanelDetector.detectPanels(detection.bitmap)
+            val scaledRects = rects.map { r ->
+                Rect(
+                    (r.left * detection.scaleX).roundToInt(),
+                    (r.top * detection.scaleY).roundToInt(),
+                    (r.right * detection.scaleX).roundToInt(),
+                    (r.bottom * detection.scaleY).roundToInt(),
+                )
+            }
+            val ordered = PanelOrder.order(scaledRects, rtl = isRtlPanels)
+            // Fallback to full page in source coordinate space when no panels detected
+            val fullW = (detection.bitmap.width * detection.scaleX).roundToInt()
+            val fullH = (detection.bitmap.height * detection.scaleY).roundToInt()
+            val panels = if (ordered.isNotEmpty()) ordered else listOf(Rect(0, 0, fullW, fullH))
+            Log.d("PanelReader", "Detected panels: ${panels.size} on page ${page.index}")
             panelIndex = restorePanelIndex?.let { rpi ->
                 when (rpi) {
                     Int.MAX_VALUE -> panels.lastIndex
@@ -230,35 +278,51 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
             } ?: 0
 
             controller = PanelReaderController(
-                state = PanelReaderState(pageBitmap = bitmap, panels = panels, currentIndex = panelIndex)
+                // pageBitmap is not used by navigation; provide detection bitmap to keep state valid
+                state = PanelReaderState(pageBitmap = detection.bitmap, panels = panels, currentIndex = panelIndex)
             )
 
             // show image
             binding.ssiv.setImage(ImageSource.uri(uri))
-            binding.ssiv.setOnImageEventListener(object : SubsamplingScaleImageView.OnImageEventListener {
+            binding.ssiv.addOnImageEventListener(object : DefaultOnImageEventListener {
                 override fun onReady() {
                     binding.gestureOverlay.isVisible = true
-                    fullPageMode = false
-                    focusPanel(panels[panelIndex], animate = !reduceAnimations)
+                    // Start with full page view; first user action focuses the first panel
+                    fullPageMode = true
+                    val ssiv = binding.ssiv
+                    ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
+                    ssiv.maxScale = 10f
+                    ssiv.panLimit = SubsamplingScaleImageView.PAN_LIMIT_INSIDE
+                    ssiv.resetScaleAndCenter()
+                    // Attach dark mask overlay
+                    binding.maskOverlay.attach(ssiv)
+                    binding.maskOverlay.visibility = View.GONE
                 }
-
-                override fun onImageLoaded() {}
-                override fun onPreviewLoadError(e: Exception) {}
-                override fun onImageLoadError(e: Exception) {}
-                override fun onTileLoadError(e: Exception) {}
-                override fun onPreviewReleased() {}
             })
         }
     }
 
     private fun focusPanel(rect: Rect, animate: Boolean) {
-        val ssiv = viewBinding?.ssiv ?: return
+        val binding = viewBinding ?: return
+        val ssiv = binding.ssiv
+        val mask = binding.maskOverlay
+        // Add ~5% padding around panel for breathing room
+        val pad = (minOf(rect.width(), rect.height()) * 0.05f).toInt()
+        val padded = Rect(
+            (rect.left - pad).coerceAtLeast(0),
+            (rect.top - pad).coerceAtLeast(0),
+            rect.right + pad,
+            rect.bottom + pad
+        )
+        mask.setPanelRect(padded)
+        mask.visibility = View.VISIBLE
+
         val vw = ssiv.width.toFloat().coerceAtLeast(1f)
         val vh = ssiv.height.toFloat().coerceAtLeast(1f)
-        val rw = rect.width().toFloat().coerceAtLeast(1f)
-        val rh = rect.height().toFloat().coerceAtLeast(1f)
+        val rw = padded.width().toFloat().coerceAtLeast(1f)
+        val rh = padded.height().toFloat().coerceAtLeast(1f)
         val scale = minOf(vw / rw, vh / rh)
-        val center = PointF(rect.centerX().toFloat(), rect.centerY().toFloat())
+        val center = PointF(padded.centerX().toFloat(), padded.centerY().toFloat())
         ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CUSTOM
         ssiv.minScale = scale
         if (animate && isAnimationEnabled()) {
@@ -270,20 +334,50 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
         }
     }
 
-    private suspend fun decodeBitmapForDetection(uri: Uri): Bitmap = withContext(Dispatchers.IO) {
-        val file = uri.toFile()
-        val opts = BitmapFactory.Options()
-        opts.inJustDecodeBounds = true
-        BitmapFactory.decodeFile(file.absolutePath, opts)
-        val maxDim = maxOf(opts.outWidth, opts.outHeight).coerceAtLeast(1)
-        var sample = 1
-        var current = maxDim
-        while (current > 2560) { // keep under ~2.5k px for memory
-            current /= 2
-            sample *= 2
+    override fun onZoomIn() {
+        // Panel reader uses tap navigation; zoom controls are no-ops here
+    }
+
+    override fun onZoomOut() {
+        // Panel reader uses tap navigation; zoom controls are no-ops here
+    }
+
+    private data class DetectionBitmap(val bitmap: Bitmap, val scaleX: Float, val scaleY: Float)
+
+    private suspend fun decodeBitmapForDetection(uri: Uri): DetectionBitmap = withContext(Dispatchers.IO) {
+        // Try file path first
+        runCatching {
+            val file = uri.toFile()
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(file.absolutePath, bounds)
+            val srcW = bounds.outWidth.coerceAtLeast(1)
+            val srcH = bounds.outHeight.coerceAtLeast(1)
+            var sample = 1
+            var currentMax = maxOf(srcW, srcH)
+            while (currentMax > 2560) { // keep under ~2.5k px on the longer side
+                currentMax = (currentMax + 1) / 2
+                sample *= 2
+            }
+            val decoded = BitmapFactory.decodeFile(file.absolutePath, BitmapFactory.Options().apply { inSampleSize = sample })
+                ?: throw IllegalStateException("decodeFile returned null")
+            DetectionBitmap(decoded, sample.toFloat(), sample.toFloat())
+        }.getOrElse {
+            // Fallback: decode via ContentResolver stream
+            val cr = requireContext().contentResolver
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+            val srcW = bounds.outWidth.coerceAtLeast(1)
+            val srcH = bounds.outHeight.coerceAtLeast(1)
+            var sample = 1
+            var currentMax = maxOf(srcW, srcH)
+            while (currentMax > 2560) {
+                currentMax = (currentMax + 1) / 2
+                sample *= 2
+            }
+            val decoded = cr.openInputStream(uri)?.use { inp ->
+                BitmapFactory.decodeStream(inp, null, BitmapFactory.Options().apply { inSampleSize = sample })
+            } ?: Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
+            DetectionBitmap(decoded, sample.toFloat(), sample.toFloat())
         }
-        val real = BitmapFactory.Options().apply { inSampleSize = sample }
-        return@withContext BitmapFactory.decodeFile(file.absolutePath, real)
-            ?: Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
     }
 }

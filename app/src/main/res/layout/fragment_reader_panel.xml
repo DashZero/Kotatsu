@@ -15,6 +15,15 @@
         android:clickable="false"
         android:focusable="false" />
 
+    <!-- Dark mask overlay that highlights current panel area -->
+    <org.koitharu.kotatsu.reader.ui.pager.panel.PanelMaskView
+        android:id="@+id/maskOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false"
+        android:visibility="gone" />
+
     <!-- Transparent overlay to capture taps and gestures -->
     <View
         android:id="@+id/gestureOverlay"
