@@ -1,0 +1,37 @@
+
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="Comments">
+
+        <SwitchPreferenceCompat
+            app:key="comments_enabled"
+            app:title="Enable Comments"
+            app:defaultValue="true" />
+
+        <SwitchPreferenceCompat
+            app:key="comments_moderation_enabled"
+            app:title="Enable Moderation"
+            app:dependency="comments_enabled"
+            app:defaultValue="true" />
+
+        <EditTextPreference
+            app:key="comments_display_name"
+            app:title="Display Name"
+            app:dependency="comments_enabled"
+            app:summary="Your name in the comments" />
+
+        <EditTextPreference
+            app:key="comments_avatar_url"
+            app:title="Avatar URL"
+            app:dependency="comments_enabled"
+            app:summary="Your avatar in the comments" />
+
+        <EditTextPreference
+            app:key="comments_peer_url"
+            app:title="Gun Peer URL"
+            app:dependency="comments_enabled"
+            app:summary="Advanced: custom Gun.js peer URL" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

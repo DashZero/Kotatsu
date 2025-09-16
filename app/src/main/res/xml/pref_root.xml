@@ -51,9 +51,15 @@
 		android:title="@string/services" />
 
 	<PreferenceScreen
+		android:fragment="org.koitharu.kotatsu.settings.CommentsSettingsFragment"
+		android:icon="@drawable/ic_comment"
+		android:key="comments"
+		android:title="@string/comments" />
+
+	<PreferenceScreen
 		android:fragment="org.koitharu.kotatsu.settings.about.AboutSettingsFragment"
 		android:icon="@drawable/ic_info_outline"
 		android:key="about"
-		android:title="@string/about" />
+		android.title="@string/about" />
 
 </PreferenceScreen>
