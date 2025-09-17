@@ -3,6 +3,7 @@
     <plurals name="items">
         <item quantity="one">%1$d předmět</item>
         <item quantity="few">%1$d předměty</item>
+        <item quantity="many">%1$d předmětů</item>
         <item quantity="other">%1$d předmětů</item>
     </plurals>
     <plurals name="new_chapters">

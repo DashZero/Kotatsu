@@ -69,6 +69,8 @@ import org.koitharu.kotatsu.suggestions.data.SuggestionEntity
 import org.koitharu.kotatsu.tracker.data.TrackEntity
 import org.koitharu.kotatsu.tracker.data.TrackLogEntity
 import org.koitharu.kotatsu.tracker.data.TracksDao
+import org.koitharu.kotatsu.comments.Comment
+import org.koitharu.kotatsu.comments.CommentDao
 
 const val DATABASE_VERSION = 27
 
@@ -77,7 +79,7 @@ const val DATABASE_VERSION = 27
 		MangaEntity::class, TagEntity::class, HistoryEntity::class, MangaTagsEntity::class, ChapterEntity::class,
 		FavouriteCategoryEntity::class, FavouriteEntity::class, MangaPrefsEntity::class, TrackEntity::class,
 		TrackLogEntity::class, SuggestionEntity::class, BookmarkEntity::class, ScrobblingEntity::class,
-		MangaSourceEntity::class, StatsEntity::class, LocalMangaIndexEntity::class,
+		MangaSourceEntity::class, StatsEntity::class, LocalMangaIndexEntity::class, Comment::class,
 	],
 	version = DATABASE_VERSION,
 )
@@ -112,6 +114,8 @@ abstract class MangaDatabase : RoomDatabase() {
 	abstract fun getLocalMangaIndexDao(): LocalMangaIndexDao
 
 	abstract fun getChaptersDao(): ChaptersDao
+
+	abstract fun getCommentDao(): CommentDao
 }
 
 fun getDatabaseMigrations(context: Context): Array<Migration> = arrayOf(

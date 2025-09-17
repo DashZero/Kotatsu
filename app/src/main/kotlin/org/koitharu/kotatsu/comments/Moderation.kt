@@ -35,7 +35,7 @@ object Moderation {
     fun sanitize(text: String): String {
         var sanitizedText = text
         if (text.count { it.isUpperCase() }.toDouble() / text.length > 0.7) {
-            sanitizedText = sanitizedText.toLowerCase()
+            sanitizedText = sanitizedText.lowercase()
         }
         sanitizedText = stripUnsafeMarkdown(sanitizedText)
         sanitizedText = filterProfanity(sanitizedText)
@@ -47,12 +47,12 @@ object Moderation {
     }
 
     private fun hasExcessiveRepeatedChars(text: String): Boolean {
-        val pattern = "(\w)\1{20,}".toRegex()
+        val pattern = "(\\w)\\1{20,}".toRegex()
         return pattern.containsMatchIn(text)
     }
 
     private fun countLinks(text: String): Int {
-        val pattern = "(https?://\S+)".toRegex()
+        val pattern = "(https?://\\S+)".toRegex()
         return pattern.findAll(text).count()
     }
 

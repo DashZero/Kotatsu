@@ -1,59 +1,43 @@
-
 package org.koitharu.kotatsu.comments
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CommentRepository(private val commentDao: CommentDao, private val gunClient: GunClient) {
+@Singleton
+class CommentRepository @Inject constructor(
+    private val commentDao: CommentDao,
+    private val gunClient: GunClient
+) {
+    private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     fun getComments(mangaId: String): Flow<List<Comment>> {
-        val localComments = commentDao.getComments(mangaId)
-        val remoteComments = gunClient.subscribe(mangaId)
-
-        return combine(localComments, remoteComments) { local, remote ->
-            (local + remote).distinctBy { it.id }.sortedByDescending { it.timestamp }
-        }.onEach { comments ->
-            // Prune comments if there are more than 1000
-            if (comments.size > 1000) {
-                val commentsToPrune = comments.sortedBy { it.timestamp }.take(comments.size - 1000)
-                commentDao.delete(commentsToPrune.map { it.id })
+        gunClient.subscribeToComments(mangaId) { comment ->
+            repositoryScope.launch {
+                commentDao.insertComment(comment)
             }
-
-            // Cache the latest 500 comments
-            val commentsToCache = comments.sortedByDescending { it.timestamp }.take(500)
-            commentDao.insertAll(commentsToCache)
         }
+        return commentDao.getCommentsByMangaId(mangaId)
     }
 
     suspend fun sendComment(comment: Comment) {
-        val sanitizedText = Moderation.sanitize(comment.text)
-        if (sanitizedText.isNotEmpty()) {
-            val sanitizedComment = comment.copy(text = sanitizedText)
-            commentDao.insertAll(listOf(sanitizedComment))
-            gunClient.sendComment(sanitizedComment)
-        }
+        gunClient.sendComment(comment.mangaId, comment)
     }
 
     suspend fun deleteComment(comment: Comment) {
-        val updatedComment = comment.copy(deleted = true)
-        commentDao.insertAll(listOf(updatedComment))
-        gunClient.deleteComment(updatedComment)
+        gunClient.deleteComment(comment.mangaId, comment.id)
+        commentDao.deleteComment(comment)
     }
 
     suspend fun reportComment(comment: Comment) {
-        val updatedComment = comment.copy(reportCount = comment.reportCount + 1)
-        commentDao.insertAll(listOf(updatedComment))
-        gunClient.reportComment(updatedComment)
-
-        if (updatedComment.reportCount >= 5) {
-            val userComments = commentDao.getCommentsByUser(updatedComment.userId)
-            val deletedComments = userComments.map { it.copy(deleted = true) }
-            commentDao.insertAll(deletedComments)
-        }
+        // TODO: Implement reporting logic
     }
 
     fun unsubscribe(mangaId: String) {
-        gunClient.unsubscribe(mangaId)
+        gunClient.unsubscribeFromComments(mangaId)
     }
 }

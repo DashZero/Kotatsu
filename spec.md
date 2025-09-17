@@ -23,12 +23,19 @@ This document outlines the implementation of a modular comment/chat system for t
 - **Settings:** The settings screen for the comments feature has been created as a preference XML file (`pref_comments.xml`) and a corresponding fragment (`CommentsSettingsFragment.kt`). The settings screen has been integrated into the main settings screen (`pref_root.xml`).
 - **Directory Structure:** All the files for the comments module have been placed in the `app/src/main/kotlin/org/koitharu/kotatsu/comments` directory.
 
-### What is not done
+### Work in Progress / Partially Done
 
 - **Gun.js Client:** The `GunClient.kt` is a placeholder. A real Gun.js client needs to be implemented.
-- **Room Database:** The Room database class and the Hilt module for providing the `CommentDao` are not created.
-- **UI:** The UI for the comments section in the `DetailsActivity` is not implemented. The project uses Android Views, not Jetpack Compose.
-- **Resources:** Placeholder icons and strings have been used. These need to be replaced with actual resources.
+- **Hilt Integration & Database Setup:**
+    - `AppDatabase.kt` (existing Room DB) has been updated to include `Comment` entity and `commentDao()` method. Migration was handled with fallbackToDestructiveMigration for development.
+    - `GunClient.kt` and `CommentRepository.kt` are being refactored to use Hilt (`@Inject constructor`, `@Singleton`, `mangaId` parameter passing adjusted).
+    - A Hilt module (`DatabaseModule.kt`) will be created to provide `AppDatabase` and `CommentDao`.
+    - `CommentViewModel.kt` will be refactored to use `@HiltViewModel` and `SavedStateHandle`.
+- **UI (Android Views):**
+    - Layout files created: `fragment_comments.xml`, `item_comment.xml`, `item_comment_placeholder.xml`, `drawable/ic_flag.xml`.
+    - `CommentsFragment.kt` is being created to manage the comments UI and interact with `CommentViewModel`.
+    - `CommentAdapter.kt` (RecyclerView adapter) still needs to be created.
+    - Integration of `CommentsFragment` into `DetailsActivity` is pending.
 
 ## File Structure
 
@@ -40,20 +47,25 @@ This document outlines the implementation of a modular comment/chat system for t
 - `app/src/main/kotlin/org/koitharu/kotatsu/comments/Moderation.kt`
 - `app/src/main/res/xml/pref_comments.xml`
 - `app/src/main/kotlin/org/koitharu/kotatsu/settings/CommentsSettingsFragment.kt`
+- `app/src/main/res/layout/fragment_comments.xml` (New)
+- `app/src/main/res/layout/item_comment.xml` (New)
+- `app/src/main/res/layout/item_comment_placeholder.xml` (New)
+- `app/src/main/res/drawable/ic_flag.xml` (New)
+- `app/src/main/kotlin/org/koitharu/kotatsu/comments/ui/CommentsFragment.kt` (New - In Progress)
 
 ## Next Steps
 
-1. **Fix the build error:** Find the correct path to the Android SDK and update the `local.properties` file.
-2. **Create the Room database:**
-    - Create a Room database class that includes the `Comment` entity.
-    - Create a Hilt module to provide the `CommentDao` to the `CommentRepository`.
-3. **Implement the Gun.js client:**
-    - Choose a Gun.js client library for Java/Kotlin.
-    - Implement the methods in `GunClient.kt` to connect to a Gun.js peer and handle real-time comment synchronization.
-4. **Implement the UI:**
-    - Create an XML layout for the comments section in `DetailsActivity`.
-    - Use a `RecyclerView` to display the comments.
-    - Use an `EditText` and a `Button` to allow users to add new comments.
-    - Connect the UI to the `CommentViewModel` to display comments and handle user actions.
-5. **Add resources:**
-    - Add the necessary icons and strings to the project.
+1.  **Complete Hilt Integration & Database Setup (In Progress):**
+    -   Finalize Hilt annotations for `GunClient.kt`, `CommentRepository.kt`.
+    -   Create `DatabaseModule.kt` to provide `AppDatabase` and `CommentDao`.
+    -   Refactor `CommentViewModel.kt` for Hilt (`@HiltViewModel`, `SavedStateHandle`).
+2.  **Implement the Gun.js client (Pending):**
+    -   Choose a Gun.js client library for Java/Kotlin.
+    -   Implement the methods in `GunClient.kt` to connect to a Gun.js peer and handle real-time comment synchronization.
+3.  **Complete UI Implementation (In Progress):**
+    -   Finalize `CommentsFragment.kt` (setup RecyclerView, ViewModel interaction).
+    -   Create `CommentAdapter.kt` for the RecyclerView.
+    -   Add `FragmentContainerView` to `activity_details.xml` and load `CommentsFragment`.
+    -   Connect UI elements in `CommentsFragment` to `CommentViewModel` methods (send, delete, report).
+    -   Implement avatar loading in `CommentAdapter`.
+    -   Implement moderation UI/logic (delete/report buttons in `item_comment.xml` and handling in fragment/VM).

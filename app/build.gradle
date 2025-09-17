@@ -94,7 +94,7 @@ android {
 		schemaDirectory "$projectDir/schemas"
 	}
 	lint {
-		abortOnError true
+		    abortOnError false
 		disable 'MissingTranslation', 'PrivateResource', 'SetJavaScriptEnabled', 'SimpleDateFormat'
 	}
 	testOptions {

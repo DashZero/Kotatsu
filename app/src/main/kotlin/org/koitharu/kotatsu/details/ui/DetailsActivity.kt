@@ -41,6 +41,8 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.bookmarks.domain.Bookmark
+import org.koitharu.kotatsu.comments.ui.CommentsFragment // Added
+import org.koitharu.kotatsu.comments.vm.CommentViewModel // Added
 import org.koitharu.kotatsu.core.image.CoilMemoryCacheKey
 import org.koitharu.kotatsu.core.model.FavouriteCategory
 import org.koitharu.kotatsu.core.model.LocalMangaSource
@@ -135,6 +137,7 @@ class DetailsActivity :
 	private val viewModel: DetailsViewModel by viewModels()
 	private lateinit var menuProvider: DetailsMenuProvider
 	private lateinit var infoBinding: LayoutDetailsTableBinding
+	private var commentsFragmentAdded = false // Added
 
 	override val bottomSheet: View?
 		get() = viewBinding.containerBottomSheet
@@ -153,8 +156,8 @@ class DetailsActivity :
 		viewBinding.buttonDescriptionMore.setOnClickListener(this)
 		viewBinding.buttonScrobblingMore.setOnClickListener(this)
 		viewBinding.buttonRelatedMore.setOnClickListener(this)
-		viewBinding.textViewDescription.addOnLayoutChangeListener(this)
 		viewBinding.swipeRefreshLayout.setOnRefreshListener(this)
+		viewBinding.textViewDescription.addOnLayoutChangeListener(this)
 		viewBinding.textViewDescription.viewTreeObserver.addOnDrawListener(this)
 		infoBinding.textViewAuthor.movementMethod = LinkMovementMethodCompat.getInstance()
 		viewBinding.textViewDescription.movementMethod = LinkMovementMethodCompat.getInstance()
@@ -173,7 +176,23 @@ class DetailsActivity :
 		}
 
 		val appRouter = router
-		viewModel.mangaDetails.filterNotNull().observe(this, ::onMangaUpdated)
+		viewModel.mangaDetails.filterNotNull().observe(this) { details -> // Modified to use details
+            onMangaUpdated(details) // Existing call
+            if (savedInstanceState == null && !commentsFragmentAdded) { // Check commentsFragmentAdded
+                val mangaId = details.id // Get mangaId from details
+                if (mangaId.isNotBlank()) {
+                    val commentsFragment = CommentsFragment().apply {
+                        arguments = Bundle().apply {
+                            putString(CommentViewModel.MANGA_ID_KEY, mangaId)
+                        }
+                    }
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.comments_fragment_container, commentsFragment)
+                        .commit()
+                    commentsFragmentAdded = true // Set flag
+                }
+            }
+        }
 		viewModel.coverUrl.observe(this, ::loadCover)
 		viewModel.onMangaRemoved.observeEvent(this, ::onMangaRemoved)
 		viewModel.onError
