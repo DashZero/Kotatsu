@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gun.js Client</title>
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+    <script>
+        // Default relay, can be overridden by Android
+        let gun = Gun('wss://gun-manhattan.herokuapp.com/gun');
+        let currentMangaId = null;
+        let commentNode = null;
+        let unsubscribeCallback = null;
+
+        // Function to send messages to Android
+        function postMessageToAndroid(payload) {
+            // console.log is intercepted by Android's WebViewClient.onConsoleMessage
+            console.log(JSON.stringify(payload));
+        }
+
+        // Expose API to Android
+        window.CommentAPI = {
+            setRelay: function(relayUrl) {
+                if (gun) {
+                    gun.opt({ peers: [relayUrl] });
+                    postMessageToAndroid({ event: 'log', message: `Gun relay set to: ${relayUrl}` });
+                }
+            },
+
+            subscribe: function(mangaId) {
+                if (currentMangaId === mangaId) {
+                    postMessageToAndroid({ event: 'log', message: `Already subscribed to ${mangaId}` });
+                    return;
+                }
+                window.CommentAPI.unsubscribe(); // Unsubscribe from previous if any
+
+                currentMangaId = mangaId;
+                commentNode = gun.get(`manga/${mangaId}/comments`);
+
+                postMessageToAndroid({ event: 'log', message: `Subscribing to mangaId: ${mangaId}` });
+
+                unsubscribeCallback = commentNode.map().on(function(data, key) {
+                    if (data) {
+                        // Gun.js returns null for deleted items, filter them out or handle explicitly
+                        if (data._ && data._['#'] === `manga/${mangaId}/comments/${key}`) {
+                            // This is a valid comment object
+                            postMessageToAndroid({
+                                event: 'newComment',
+                                mangaId: mangaId,
+                                comment: { ...data, id: key } // Add key as id
+                            });
+                        } else if (data === null) {
+                            // Item was deleted
+                            postMessageToAndroid({
+                                event: 'commentDeleted',
+                                mangaId: mangaId,
+                                commentId: key
+                            });
+                        }
+                    }
+                });
+            },
+
+            unsubscribe: function() {
+                if (unsubscribeCallback) {
+                    unsubscribeCallback();
+                    unsubscribeCallback = null;
+                    postMessageToAndroid({ event: 'log', message: `Unsubscribed from ${currentMangaId}` });
+                }
+                currentMangaId = null;
+                commentNode = null;
+            },
+
+            sendComment: function(mangaId, comment) {
+                if (!commentNode || currentMangaId !== mangaId) {
+                    postMessageToAndroid({ event: 'error', mangaId: mangaId, message: 'Not subscribed to this manga or commentNode not ready.' });
+                    return;
+                }
+                const commentId = comment.id; // Use pre-generated UUID from Android
+                commentNode.get(commentId).put(comment, function(ack) {
+                    if (ack.err) {
+                        postMessageToAndroid({ event: 'error', mangaId: mangaId, comment: comment, message: ack.err });
+                    } else {
+                        postMessageToAndroid({ event: 'commentSentAck', mangaId: mangaId, comment: comment });
+                    }
+                });
+            },
+
+            deleteComment: function(mangaId, commentId) {
+                if (!commentNode || currentMangaId !== mangaId) {
+                    postMessageToAndroid({ event: 'error', mangaId: mangaId, message: 'Not subscribed to this manga or commentNode not ready.' });
+                    return;
+                }
+                commentNode.get(commentId).put(null, function(ack) {
+                    if (ack.err) {
+                        postMessageToAndroid({ event: 'error', mangaId: mangaId, commentId: commentId, message: ack.err });
+                    } else {
+                        postMessageToAndroid({ event: 'commentDeletedAck', mangaId: mangaId, commentId: commentId });
+                    }
+                });
+            },
+
+            reportComment: function(mangaId, commentId) {
+                if (!commentNode || currentMangaId !== mangaId) {
+                    postMessageToAndroid({ event: 'error', mangaId: mangaId, message: 'Not subscribed to this manga or commentNode not ready.' });
+                    return;
+                }
+                // Increment reportCount on the comment
+                commentNode.get(commentId).once(function(data) {
+                    if (data) {
+                        const currentReports = data.reportCount || 0;
+                        commentNode.get(commentId).put({ reportCount: currentReports + 1 }, function(ack) {
+                            if (ack.err) {
+                                postMessageToAndroid({ event: 'error', mangaId: mangaId, commentId: commentId, message: ack.err });
+                            } else {
+                                postMessageToAndroid({ event: 'commentReportedAck', mangaId: mangaId, commentId: commentId, newReportCount: currentReports + 1 });
+                            }
+                        });
+                    } else {
+                        postMessageToAndroid({ event: 'error', mangaId: mangaId, commentId: commentId, message: 'Comment not found for reporting.' });
+                    }
+                });
+            }
+        };
+
+        // Initial log to confirm script loaded
+        postMessageToAndroid({ event: 'log', message: 'gun.html loaded and CommentAPI exposed.' });
+
+    </script>
+</head>
+<body>
+    <!-- Hidden WebView content -->
+</body>
+</html>
