@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import kotlin.coroutines.resume
@@ -42,8 +43,8 @@ class GunClient(private val context: Context) {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
                     if (url?.endsWith("gun.html") == true) {
-                        // Set initial relay from settings
-                        evaluateJavascript("window.CommentAPI.setRelay('${CommentsSettings.relayUrl.value}');")
+                        // Set initial relays from settings
+                        setRelay(CommentsSettings.relayUrls.value)
                         _events.trySend(GunEvent.Ready)
                     }
                 }
@@ -133,8 +134,9 @@ class GunClient(private val context: Context) {
         evaluateJavascript("window.CommentAPI.reportComment('$mangaId', '$commentId');")
     }
 
-    suspend fun setRelay(relayUrl: String) {
-        evaluateJavascript("window.CommentAPI.setRelay('$relayUrl');")
+    suspend fun setRelay(relayUrls: List<String>) {
+        val jsonArray = JSONArray(relayUrls)
+        evaluateJavascript("window.CommentAPI.setRelay(${jsonArray.toString()});")
     }
 
     sealed class GunEvent {

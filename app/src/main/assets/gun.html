@@ -7,8 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
     <script>
-        // Default relay, can be overridden by Android
-        let gun = Gun('wss://gun-manhattan.herokuapp.com/gun');
+        // Default relays, can be overridden by Android
+        let gun = Gun(['wss://gun-manhattan.herokuapp.com/gun']); // Initialize with an array
         let currentMangaId = null;
         let commentNode = null;
         let unsubscribeCallback = null;
@@ -21,10 +21,10 @@
 
         // Expose API to Android
         window.CommentAPI = {
-            setRelay: function(relayUrl) {
+            setRelay: function(relayUrls) { // Changed to relayUrls (array)
                 if (gun) {
-                    gun.opt({ peers: [relayUrl] });
-                    postMessageToAndroid({ event: 'log', message: `Gun relay set to: ${relayUrl}` });
+                    gun.opt({ peers: relayUrls }); // Pass the array directly
+                    postMessageToAndroid({ event: 'log', message: `Gun relays set to: ${JSON.stringify(relayUrls)}` });
                 }
             },
 

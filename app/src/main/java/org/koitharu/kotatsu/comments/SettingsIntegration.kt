@@ -24,8 +24,8 @@ object CommentsSettings {
     private val _enableModeration = mutableStateOf(true)
     val enableModeration: State<Boolean> = _enableModeration
 
-    private val _relayUrl = mutableStateOf("wss://gun-manhattan.herokuapp.com/gun")
-    val relayUrl: State<String> = _relayUrl
+    private val _relayUrls = mutableStateOf(listOf("wss://gun-manhattan.herokuapp.com/gun"))
+    val relayUrls: State<List<String>> = _relayUrls
 
     private val _userId = mutableStateOf<String?>(null)
     val userId: State<String?> = _userId
@@ -44,7 +44,7 @@ object CommentsSettings {
         _displayName.value = sharedPreferences.getString("display_name", "Anonymous") ?: "Anonymous"
         _avatarUrl.value = sharedPreferences.getString("avatar_url", null)
         _enableModeration.value = sharedPreferences.getBoolean("enable_moderation", true)
-        _relayUrl.value = sharedPreferences.getString("relay_url", "wss://gun-manhattan.herokuapp.com/gun") ?: "wss://gun-manhattan.herokuapp.com/gun"
+        _relayUrls.value = sharedPreferences.getStringSet("relay_urls", setOf("wss://gun-manhattan.herokuapp.com/gun"))?.toList() ?: listOf("wss://gun-manhattan.herokuapp.com/gun")
         _bannedUntil.value = sharedPreferences.getLong("banned_until", 0L)
 
         // Generate userId if not exists
@@ -76,9 +76,9 @@ object CommentsSettings {
         sharedPreferences.edit().putBoolean("enable_moderation", enabled).apply()
     }
 
-    fun setRelayUrl(url: String) {
-        _relayUrl.value = url
-        sharedPreferences.edit().putString("relay_url", url).apply()
+    fun setRelayUrls(urls: List<String>) {
+        _relayUrls.value = urls
+        sharedPreferences.edit().putStringSet("relay_urls", urls.toSet()).apply()
     }
 
     fun setBannedUntil(timestamp: Long) {

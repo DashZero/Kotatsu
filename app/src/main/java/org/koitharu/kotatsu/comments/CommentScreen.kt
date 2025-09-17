@@ -361,7 +361,7 @@ fun CommentsSettingsDialog(onDismiss: () -> Unit) {
     var displayName by remember { mutableStateOf(CommentsSettings.displayName.value) }
     var avatarUrl by remember { mutableStateOf(CommentsSettings.avatarUrl.value ?: "") }
     val enableModeration by CommentsSettings.enableModeration.collectAsState()
-    var relayUrl by remember { mutableStateOf(CommentsSettings.relayUrl.value) }
+    var relayUrlsString by remember { mutableStateOf(CommentsSettings.relayUrls.value.joinToString(", ")) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -405,9 +405,9 @@ fun CommentsSettingsDialog(onDismiss: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = relayUrl,
-                    onValueChange = { relayUrl = it },
-                    label = { Text("Gun Relay URL") },
+                    value = relayUrlsString,
+                    onValueChange = { relayUrlsString = it },
+                    label = { Text("Gun Relay URLs (comma-separated)") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
