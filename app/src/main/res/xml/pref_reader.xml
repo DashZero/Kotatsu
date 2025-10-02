@@ -10,97 +10,95 @@
 		android:title="@string/default_mode"
 		app:useSimpleSummaryProvider="true" />
 
-	<SwitchPreferenceCompat
-		android:defaultValue="false"
-		android:key="panel_view_enabled"
-		android:title="@string/enable_panel_view" />
 	<PreferenceCategory
-		android:key="panel_frame_detection_category"
-		android:title="@string/panel_frame_detection_title"
+		android:key="panel_view_settings_group"
+		android:title="@string/panel_view_settings_title"
 		app:isPreferenceVisible="false">
 
-		<SwitchPreferenceCompat
-			android:defaultValue="false"
-			android:key="panel_disable_frame"
-			android:summary="@string/panel_disable_frame_summary"
-			android:title="@string/panel_disable_frame_title" />
+		<PreferenceCategory
+			android:key="panel_frame_detection_category"
+			android:title="@string/panel_frame_detection_title">
 
-		<SwitchPreferenceCompat
-			android:defaultValue="false"
-			android:key="panel_inline_frames"
-			android:summary="@string/panel_inline_frames_summary"
-			android:title="@string/panel_inline_frames_title" />
+			<SwitchPreferenceCompat
+				android:defaultValue="false"
+				android:key="panel_disable_frame"
+				android:summary="@string/panel_disable_frame_summary"
+				android:title="@string/panel_disable_frame_title" />
 
-	</PreferenceCategory>
+			<SwitchPreferenceCompat
+				android:defaultValue="false"
+				android:key="panel_inline_frames"
+				android:summary="@string/panel_inline_frames_summary"
+				android:title="@string/panel_inline_frames_title" />
 
-	<PreferenceCategory
-		android:key="panel_scan_type_category"
-		android:title="@string/panel_scan_type_title"
-		app:isPreferenceVisible="false">
+		</PreferenceCategory>
 
-		<ListPreference
-			android:defaultValue="REGULAR"
-			android:entries="@array/panel_scan_types"
-			android:entryValues="@array/panel_scan_type_values"
-			android:key="panel_scan_type"
-			android:title="@string/panel_scan_type_title"
-			app:useSimpleSummaryProvider="true" />
+		<PreferenceCategory
+			android:key="panel_scan_type_category"
+			android:title="@string/panel_scan_type_title">
 
-	</PreferenceCategory>
+			<ListPreference
+				android:defaultValue="REGULAR"
+				android:entries="@array/panel_scan_types"
+				android:entryValues="@array/panel_scan_type_values"
+				android:key="panel_scan_type"
+				android:title="@string/panel_scan_type_title"
+				app:useSimpleSummaryProvider="true" />
 
-	<PreferenceCategory
-		android:key="panel_reading_order_category"
-		android:title="@string/panel_reading_order_title"
-		app:isPreferenceVisible="false">
+		</PreferenceCategory>
 
-		<ListPreference
-			android:defaultValue="STANDARD"
-			android:entries="@array/panel_reading_orders"
-			android:entryValues="@array/panel_reading_order_values"
-			android:key="panel_reading_order"
-			android:title="@string/panel_reading_order_title"
-			app:useSimpleSummaryProvider="true" />
+		<PreferenceCategory
+			android:key="panel_reading_order_category"
+			android:title="@string/panel_reading_order_title">
 
-	</PreferenceCategory>
+			<ListPreference
+				android:defaultValue="STANDARD"
+				android:entries="@array/panel_reading_orders"
+				android:entryValues="@array/panel_reading_order_values"
+				android:key="panel_reading_order"
+				android:title="@string/panel_reading_order_title"
+				app:useSimpleSummaryProvider="true" />
 
-	<PreferenceCategory
-		android:key="panel_enhancements_category"
-		android:title="@string/panel_enhancements_title"
-		app:isPreferenceVisible="false">
+		</PreferenceCategory>
 
-		<SwitchPreferenceCompat
-			android:defaultValue="false"
-			android:key="panel_auto_switch_irregular"
-			android:summary="@string/panel_auto_switch_irregular_summary"
-			android:title="@string/panel_auto_switch_irregular_title" />
+		<PreferenceCategory
+			android:key="panel_enhancements_category"
+			android:title="@string/panel_enhancements_title">
 
-		<SwitchPreferenceCompat
-			android:defaultValue="true"
-			android:key="panel_fit_to_width"
-			android:summary="@string/panel_fit_to_width_summary"
-			android:title="@string/panel_fit_to_width_title" />
+			<SwitchPreferenceCompat
+				android:defaultValue="false"
+				android:key="panel_auto_switch_irregular"
+				android:summary="@string/panel_auto_switch_irregular_summary"
+				android:title="@string/panel_auto_switch_irregular_title" />
 
-		<SwitchPreferenceCompat
-			android:defaultValue="true"
-			android:key="panel_pan_bound"
-			android:summary="@string/panel_pan_bound_summary"
-			android:title="@string/panel_pan_bound_title" />
+			<SwitchPreferenceCompat
+				android:defaultValue="true"
+				android:key="panel_fit_to_width"
+				android:summary="@string/panel_fit_to_width_summary"
+				android:title="@string/panel_fit_to_width_title" />
 
-		<org.koitharu.kotatsu.settings.utils.SliderPreference
-			android:key="panel_border_opacity"
-			android:stepSize="5"
-			android:title="@string/panel_border_opacity_title"
-			android:valueFrom="0"
-			android:valueTo="100"
-			app:defaultValue="60"
-			app:tickVisible="true" />
+			<SwitchPreferenceCompat
+				android:defaultValue="true"
+				android:key="panel_pan_bound"
+				android:summary="@string/panel_pan_bound_summary"
+				android:title="@string/panel_pan_bound_title" />
 
-		<SwitchPreferenceCompat
-			android:defaultValue="false"
-			android:key="panel_reduce_animations"
-			android:summary="@string/reduce_animations_summary"
-			android:title="@string/reduce_animations" />
+			<org.koitharu.kotatsu.settings.utils.SliderPreference
+				android:key="panel_border_opacity"
+				android:stepSize="5"
+				android:title="@string/panel_border_opacity_title"
+				android:valueFrom="0"
+				android:valueTo="100"
+				app:defaultValue="60"
+				app:tickVisible="true" />
 
+			<SwitchPreferenceCompat
+				android:defaultValue="false"
+				android:key="panel_reduce_animations"
+				android:summary="@string/reduce_animations_summary"
+				android:title="@string/reduce_animations" />
+
+		</PreferenceCategory>
 	</PreferenceCategory>
 
 

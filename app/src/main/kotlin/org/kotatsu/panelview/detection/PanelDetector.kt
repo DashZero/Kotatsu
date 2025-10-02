@@ -141,7 +141,6 @@ object PanelDetector {
             return emptyList()
         }
         val refined = ArrayList<Rect>(panels.size)
-        var didSplit = false
         panels.forEach { sourceRect ->
             val clipped = sourceRect.clampedToBitmap(bitmap) ?: run {
                 refined += sourceRect
@@ -175,7 +174,7 @@ object PanelDetector {
             subset.recycle()
 
             if (detected.size > 1) {
-                didSplit = true
+
                 refined += detected
             } else {
                 refined += trimmed

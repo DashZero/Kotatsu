@@ -16,10 +16,15 @@ class PanelMaskView @JvmOverloads constructor(
     defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
 
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val overlayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.BLACK
         alpha = 150 // ~60% opacity
         style = Paint.Style.FILL
+    }
+    private val framePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        style = Paint.Style.STROKE
+        strokeWidth = resources.displayMetrics.density * 2f
     }
 
     private var ssiv: SubsamplingScaleImageView? = null
@@ -32,8 +37,8 @@ class PanelMaskView @JvmOverloads constructor(
 
     fun setMaskOpacity(fraction: Float) {
         val alpha = (fraction.coerceIn(0f, 1f) * 255f).toInt()
-        if (paint.alpha != alpha) {
-            paint.alpha = alpha
+        if (overlayPaint.alpha != alpha) {
+            overlayPaint.alpha = alpha
             invalidate()
         }
     }
@@ -50,7 +55,6 @@ class PanelMaskView @JvmOverloads constructor(
         val v = ssiv ?: return
         if (!v.isReady) return
 
-        // Map source rect to view coordinates via two corner points
         val lt = v.sourceToViewCoord(PointF(r.left.toFloat(), r.top.toFloat())) ?: return
         val rb = v.sourceToViewCoord(PointF(r.right.toFloat(), r.bottom.toFloat())) ?: return
 
@@ -59,14 +63,13 @@ class PanelMaskView @JvmOverloads constructor(
         val right = rb.x.coerceAtMost(width.toFloat())
         val bottom = rb.y.coerceAtMost(height.toFloat())
 
-        // Draw four rectangles around the panel area to darken background
-        // Top
-        canvas.drawRect(0f, 0f, width.toFloat(), top, paint)
-        // Bottom
-        canvas.drawRect(0f, bottom, width.toFloat(), height.toFloat(), paint)
-        // Left
-        canvas.drawRect(0f, top, left, bottom, paint)
-        // Right
-        canvas.drawRect(right, top, width.toFloat(), bottom, paint)
+        // Darken everything outside the panel rect
+        canvas.drawRect(0f, 0f, width.toFloat(), top, overlayPaint)
+        canvas.drawRect(0f, bottom, width.toFloat(), height.toFloat(), overlayPaint)
+        canvas.drawRect(0f, top, left, bottom, overlayPaint)
+        canvas.drawRect(right, top, width.toFloat(), bottom, overlayPaint)
+
+        // Draw a thin frame around the focused panel
+        canvas.drawRect(left, top, right, bottom, framePaint)
     }
 }
