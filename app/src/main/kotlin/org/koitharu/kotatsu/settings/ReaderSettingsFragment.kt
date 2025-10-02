@@ -29,8 +29,8 @@ import org.koitharu.kotatsu.settings.utils.SliderPreference
 class ReaderSettingsFragment :
 	BasePreferenceFragment(R.string.reader_settings),
 	SharedPreferences.OnSharedPreferenceChangeListener {
-	private lateinit var panelViewBinder: PanelViewSettingsBinder
 
+	private lateinit var panelViewBinder: PanelViewSettingsBinder
 
 	override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
 		addPreferencesFromResource(R.xml.pref_reader)
@@ -68,9 +68,9 @@ class ReaderSettingsFragment :
 			summaryProvider = MultiSummaryProvider(R.string.disabled)
 		}
 		findPreference<SliderPreference>(AppSettings.KEY_WEBTOON_ZOOM_OUT)?.summaryProvider = PercentSummaryProvider()
-		updateReaderModeDependency()
 		panelViewBinder = PanelViewSettingsBinder(this)
-		panelViewBinder.initialise(settings)
+		panelViewBinder.initialise(settings, settings.defaultReaderMode)
+		updateReaderModeDependency()
 	}
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -95,18 +95,16 @@ class ReaderSettingsFragment :
 	}
 
 	override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-		when (key) {
-			AppSettings.KEY_READER_MODE -> updateReaderModeDependency()
-			AppSettings.KEY_PANEL_VIEW_ENABLED -> {
-				val enabled = sharedPreferences?.getBoolean(AppSettings.KEY_PANEL_VIEW_ENABLED, false) == true
-				panelViewBinder.setVisible(enabled)
-			}
+		if (key == AppSettings.KEY_READER_MODE) {
+			updateReaderModeDependency()
 		}
 	}
 
 	private fun updateReaderModeDependency() {
+		val mode = settings.defaultReaderMode
 		findPreference<Preference>(AppSettings.KEY_READER_MODE_DETECT)?.run {
-			isEnabled = settings.defaultReaderMode != ReaderMode.WEBTOON
+			isEnabled = mode != ReaderMode.WEBTOON
 		}
+		panelViewBinder.updateVisibility(mode)
 	}
 }

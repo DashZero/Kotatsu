@@ -1,6 +1,7 @@
 package org.kotatsu.panelview.detection
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.Rect
 import android.util.Log
 import java.util.ArrayList
@@ -11,6 +12,8 @@ import org.kotatsu.panelview.settings.PanelScanType
 import org.kotatsu.panelview.settings.PanelViewSettings
 
 private const val MIN_PANEL_SIZE = 48
+private const val MAX_TRIM_RATIO = 0.25f
+private const val WHITE_THRESHOLD = 230
 
 object PanelDetector {
 
@@ -140,33 +143,31 @@ object PanelDetector {
         val refined = ArrayList<Rect>(panels.size)
         var didSplit = false
         panels.forEach { sourceRect ->
-            val clipped = sourceRect.clampedToBitmap(bitmap)
-            if (clipped == null) {
+            val clipped = sourceRect.clampedToBitmap(bitmap) ?: run {
                 refined += sourceRect
                 return@forEach
             }
-            val width = clipped.width()
-            val height = clipped.height()
-            if (width < MIN_PANEL_SIZE || height < MIN_PANEL_SIZE) {
-                refined += clipped
+            val trimmed = bitmap.trimWhitespace(clipped)
+            if (trimmed.width() < MIN_PANEL_SIZE || trimmed.height() < MIN_PANEL_SIZE) {
+                refined += trimmed
                 return@forEach
             }
 
             val subset = runCatching {
-                Bitmap.createBitmap(bitmap, clipped.left, clipped.top, width, height)
+                Bitmap.createBitmap(bitmap, trimmed.left, trimmed.top, trimmed.width(), trimmed.height())
             }.getOrNull()
             if (subset == null) {
-                refined += clipped
+                refined += trimmed
                 return@forEach
             }
 
             val detected = SimpleGutterDetector.detect(subset)
                 .map { child ->
                     Rect(
-                        child.left + clipped.left,
-                        child.top + clipped.top,
-                        child.right + clipped.left,
-                        child.bottom + clipped.top,
+                        child.left + trimmed.left,
+                        child.top + trimmed.top,
+                        child.right + trimmed.left,
+                        child.bottom + trimmed.top,
                     )
                 }
                 .filter { child -> child.width() >= MIN_PANEL_SIZE && child.height() >= MIN_PANEL_SIZE }
@@ -177,10 +178,10 @@ object PanelDetector {
                 didSplit = true
                 refined += detected
             } else {
-                refined += clipped
+                refined += trimmed
             }
         }
-        return if (didSplit) refined else panels
+        return refined
     }
 
     private fun inlineFallback(bitmap: Bitmap, scanType: PanelScanType): List<Rect> {
@@ -227,5 +228,81 @@ object PanelDetector {
         } else {
             null
         }
+    }
+
+    private fun Bitmap.trimWhitespace(rect: Rect): Rect {
+        var left = rect.left
+        var right = rect.right
+        var top = rect.top
+        var bottom = rect.bottom
+
+        val maxHorizontalTrim = max(1, ((rect.width() * MAX_TRIM_RATIO).toInt()))
+        val maxVerticalTrim = max(1, ((rect.height() * MAX_TRIM_RATIO).toInt()))
+        val sampleStepX = max(1, rect.width() / 96)
+        val sampleStepY = max(1, rect.height() / 96)
+
+        var trimmed = 0
+        while (trimmed < maxVerticalTrim && top < bottom) {
+            if (!isRowMostlyWhite(top, left, right, sampleStepX)) break
+            top++
+            trimmed++
+        }
+
+        trimmed = 0
+        while (trimmed < maxVerticalTrim && bottom > top) {
+            if (!isRowMostlyWhite(bottom - 1, left, right, sampleStepX)) break
+            bottom--
+            trimmed++
+        }
+
+        trimmed = 0
+        while (trimmed < maxHorizontalTrim && left < right) {
+            if (!isColumnMostlyWhite(left, top, bottom, sampleStepY)) break
+            left++
+            trimmed++
+        }
+
+        trimmed = 0
+        while (trimmed < maxHorizontalTrim && right > left) {
+            if (!isColumnMostlyWhite(right - 1, top, bottom, sampleStepY)) break
+            right--
+            trimmed++
+        }
+
+        return if (left < right && top < bottom) {
+            Rect(left, top, right, bottom)
+        } else {
+            rect
+        }
+    }
+
+    private fun Bitmap.isRowMostlyWhite(y: Int, left: Int, right: Int, step: Int): Boolean {
+        var x = left
+        while (x < right) {
+            if (!isNearWhite(getPixel(x, y))) {
+                return false
+            }
+            x += step
+        }
+        return true
+    }
+
+    private fun Bitmap.isColumnMostlyWhite(x: Int, top: Int, bottom: Int, step: Int): Boolean {
+        var y = top
+        while (y < bottom) {
+            if (!isNearWhite(getPixel(x, y))) {
+                return false
+            }
+            y += step
+        }
+        return true
+    }
+
+    private fun isNearWhite(color: Int): Boolean {
+        val r = Color.red(color)
+        val g = Color.green(color)
+        val b = Color.blue(color)
+        val a = Color.alpha(color)
+        return a > 200 && r > WHITE_THRESHOLD && g > WHITE_THRESHOLD && b > WHITE_THRESHOLD
     }
 }

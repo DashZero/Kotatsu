@@ -5,13 +5,14 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import org.koitharu.kotatsu.core.prefs.AppSettings
+import org.koitharu.kotatsu.core.prefs.ReaderMode
 import org.koitharu.kotatsu.settings.utils.PercentSummaryProvider
 import org.koitharu.kotatsu.settings.utils.SliderPreference
 import org.kotatsu.panelview.settings.PanelReadingOrder
 
 class PanelViewSettingsBinder(private val fragment: PreferenceFragmentCompat) {
 
-    fun initialise(settings: AppSettings) {
+    fun initialise(settings: AppSettings, readerMode: ReaderMode) {
         fragment.findPreference<SliderPreference>(AppSettings.KEY_PANEL_BORDER_OPACITY)?.apply {
             summaryProvider = PercentSummaryProvider()
         }
@@ -31,12 +32,13 @@ class PanelViewSettingsBinder(private val fragment: PreferenceFragmentCompat) {
             autoSwitchPref.isChecked = true
         }
 
-        setVisible(settings.isPanelViewEnabled)
+        updateVisibility(readerMode)
     }
 
-    fun setVisible(isVisible: Boolean) {
+    fun updateVisibility(readerMode: ReaderMode) {
+        val visible = readerMode == ReaderMode.PANEL
         (CATEGORY_KEYS + PANEL_PREF_KEYS).forEach { key ->
-            fragment.findPreference<Preference>(key)?.isVisible = isVisible
+            fragment.findPreference<Preference>(key)?.isVisible = visible
         }
     }
 

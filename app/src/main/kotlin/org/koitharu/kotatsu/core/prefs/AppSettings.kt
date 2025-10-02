@@ -807,7 +807,6 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_DISCORD_RPC_SKIP_NSFW = "discord_rpc_skip_nsfw"
 		const val KEY_DISCORD_TOKEN = "discord_token"
 
-		const val KEY_PANEL_VIEW_ENABLED = "panel_view_enabled"
 		const val KEY_PANEL_SCAN_TYPE = "panel_scan_type"
 		const val KEY_PANEL_READING_ORDER = "panel_reading_order"
 		const val KEY_PANEL_DISABLE_FRAME = "panel_disable_frame"
@@ -842,8 +841,6 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		private const val READER_CROP_PAGED = 1
 		private const val READER_CROP_WEBTOON = 2
 	}
-	val isPanelViewEnabled: Boolean
-		get() = prefs.getBoolean(KEY_PANEL_VIEW_ENABLED, false)
 
 	val panelViewSettings: PanelViewSettings
 		get() = PanelViewSettings(
