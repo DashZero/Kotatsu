@@ -38,6 +38,11 @@ import org.koitharu.kotatsu.parsers.util.mapNotNullToSet
 import org.koitharu.kotatsu.parsers.util.mapToSet
 import org.koitharu.kotatsu.parsers.util.nullIfEmpty
 import org.koitharu.kotatsu.reader.domain.ReaderColorFilter
+import org.kotatsu.panelview.settings.PanelEnhancementOptions
+import org.kotatsu.panelview.settings.PanelFrameDetectionOptions
+import org.kotatsu.panelview.settings.PanelReadingOrder
+import org.kotatsu.panelview.settings.PanelScanType
+import org.kotatsu.panelview.settings.PanelViewSettings
 import java.io.File
 import java.net.Proxy
 import java.util.EnumSet
@@ -802,6 +807,16 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_DISCORD_RPC_SKIP_NSFW = "discord_rpc_skip_nsfw"
 		const val KEY_DISCORD_TOKEN = "discord_token"
 
+		const val KEY_PANEL_VIEW_ENABLED = "panel_view_enabled"
+		const val KEY_PANEL_SCAN_TYPE = "panel_scan_type"
+		const val KEY_PANEL_READING_ORDER = "panel_reading_order"
+		const val KEY_PANEL_DISABLE_FRAME = "panel_disable_frame"
+		const val KEY_PANEL_INLINE_FRAMES = "panel_inline_frames"
+		const val KEY_PANEL_AUTO_SWITCH_IRREGULAR = "panel_auto_switch_irregular"
+		const val KEY_PANEL_FIT_TO_WIDTH = "panel_fit_to_width"
+		const val KEY_PANEL_PAN_BOUND = "panel_pan_bound"
+		const val KEY_PANEL_BORDER_OPACITY = "panel_border_opacity"
+
 		// keys for non-persistent preferences
 		const val KEY_APP_VERSION = "app_version"
 		const val KEY_IGNORE_DOZE = "ignore_dose"
@@ -827,6 +842,49 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		private const val READER_CROP_PAGED = 1
 		private const val READER_CROP_WEBTOON = 2
 	}
+	val isPanelViewEnabled: Boolean
+		get() = prefs.getBoolean(KEY_PANEL_VIEW_ENABLED, false)
+
+	val panelViewSettings: PanelViewSettings
+		get() = PanelViewSettings(
+			frameDetection = PanelFrameDetectionOptions(
+				disableFrame = isPanelFrameDetectionDisabled,
+				inlineFrames = isPanelInlineFramesEnabled,
+			),
+			scanType = panelScanType,
+			readingOrder = panelReadingOrder,
+			enhancements = PanelEnhancementOptions(
+				autoSwitchIrregular = isPanelAutoSwitchIrregular,
+				fitToWidth = isPanelFitToWidth,
+				panBound = isPanelPanBound,
+				borderOpacity = panelBorderOpacity,
+			),
+		)
+
+	val panelScanType: PanelScanType
+		get() = prefs.getEnumValue(KEY_PANEL_SCAN_TYPE, PanelScanType.REGULAR)
+
+	val panelReadingOrder: PanelReadingOrder
+		get() = prefs.getEnumValue(KEY_PANEL_READING_ORDER, PanelReadingOrder.STANDARD)
+
+	val isPanelFrameDetectionDisabled: Boolean
+		get() = prefs.getBoolean(KEY_PANEL_DISABLE_FRAME, false)
+
+	val isPanelInlineFramesEnabled: Boolean
+		get() = prefs.getBoolean(KEY_PANEL_INLINE_FRAMES, false)
+
+	val isPanelAutoSwitchIrregular: Boolean
+		get() = prefs.getBoolean(KEY_PANEL_AUTO_SWITCH_IRREGULAR, false)
+
+	val isPanelFitToWidth: Boolean
+		get() = prefs.getBoolean(KEY_PANEL_FIT_TO_WIDTH, false)
+
+	val isPanelPanBound: Boolean
+		get() = prefs.getBoolean(KEY_PANEL_PAN_BOUND, true)
+
+	val panelBorderOpacity: Float
+		get() = (prefs.getInt(KEY_PANEL_BORDER_OPACITY, 60).coerceIn(0, 100)) / 100f
+
 	val isPanelReduceAnimations: Boolean
 		get() = prefs.getBoolean(KEY_PANEL_REDUCE_ANIMATIONS, false)
 }

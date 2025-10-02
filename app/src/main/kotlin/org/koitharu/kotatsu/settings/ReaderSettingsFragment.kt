@@ -21,6 +21,7 @@ import org.koitharu.kotatsu.core.ui.BasePreferenceFragment
 import org.koitharu.kotatsu.core.util.ext.setDefaultValueCompat
 import org.koitharu.kotatsu.parsers.util.mapToSet
 import org.koitharu.kotatsu.parsers.util.names
+import org.koitharu.kotatsu.settings.panelview.PanelViewSettingsBinder
 import org.koitharu.kotatsu.settings.utils.MultiSummaryProvider
 import org.koitharu.kotatsu.settings.utils.PercentSummaryProvider
 import org.koitharu.kotatsu.settings.utils.SliderPreference
@@ -29,6 +30,8 @@ import org.koitharu.kotatsu.settings.utils.SliderPreference
 class ReaderSettingsFragment :
 	BasePreferenceFragment(R.string.reader_settings),
 	SharedPreferences.OnSharedPreferenceChangeListener {
+	private lateinit var panelViewBinder: PanelViewSettingsBinder
+
 
 	override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
 		addPreferencesFromResource(R.xml.pref_reader)
@@ -67,6 +70,8 @@ class ReaderSettingsFragment :
 		}
 		findPreference<SliderPreference>(AppSettings.KEY_WEBTOON_ZOOM_OUT)?.summaryProvider = PercentSummaryProvider()
 		updateReaderModeDependency()
+		panelViewBinder = PanelViewSettingsBinder(this)
+		panelViewBinder.initialise(settings)
 	}
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -93,8 +98,9 @@ class ReaderSettingsFragment :
 	override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
 		when (key) {
 			AppSettings.KEY_READER_MODE -> updateReaderModeDependency()
-			"panel_view_enabled" -> {
-				val enabled = sharedPreferences?.getBoolean("panel_view_enabled", false) == true
+			AppSettings.KEY_PANEL_VIEW_ENABLED -> {
+				val enabled = sharedPreferences?.getBoolean(AppSettings.KEY_PANEL_VIEW_ENABLED, false) == true
+				panelViewBinder.setVisible(enabled)
 				val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
 				if (enabled) {
 					prefs.edit().putString(AppSettings.KEY_READER_MODE, ReaderMode.PANEL.name).apply()

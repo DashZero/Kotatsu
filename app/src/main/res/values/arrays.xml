@@ -144,4 +144,26 @@
 		<item>@string/ask_every_time</item>
 		<item>@string/disable</item>
 	</string-array>
+	<string-array name="panel_scan_types" translatable="false">
+		<item>@string/panel_scan_type_regular</item>
+		<item>@string/panel_scan_type_irregular</item>
+		<item>@string/panel_scan_type_quadrants</item>
+		<item>@string/panel_scan_type_webtoon</item>
+	</string-array>
+	<string-array name="panel_scan_type_values" translatable="false">
+		<item>REGULAR</item>
+		<item>IRREGULAR</item>
+		<item>FOUR_QUADRANTS</item>
+		<item>WEBTOON</item>
+	</string-array>
+	<string-array name="panel_reading_orders" translatable="false">
+		<item>@string/panel_reading_order_standard</item>
+		<item>@string/panel_reading_order_manga</item>
+		<item>@string/panel_reading_order_four_koma</item>
+	</string-array>
+	<string-array name="panel_reading_order_values" translatable="false">
+		<item>STANDARD</item>
+		<item>MANGA</item>
+		<item>FOUR_KOMA</item>
+	</string-array>
 </resources>

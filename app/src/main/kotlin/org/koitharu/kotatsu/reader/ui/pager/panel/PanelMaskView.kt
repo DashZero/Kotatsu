@@ -30,6 +30,14 @@ class PanelMaskView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun setMaskOpacity(fraction: Float) {
+        val alpha = (fraction.coerceIn(0f, 1f) * 255f).toInt()
+        if (paint.alpha != alpha) {
+            paint.alpha = alpha
+            invalidate()
+        }
+    }
+
     fun setPanelRect(rect: Rect?) {
         panelRectSrc = rect
         visibility = if (rect == null) GONE else VISIBLE

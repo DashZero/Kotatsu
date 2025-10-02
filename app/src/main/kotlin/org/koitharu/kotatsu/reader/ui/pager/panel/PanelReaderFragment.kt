@@ -33,6 +33,8 @@ import org.kotatsu.panelview.PanelOrder
 import org.kotatsu.panelview.PanelReaderController
 import org.kotatsu.panelview.PanelReaderState
 import org.kotatsu.panelview.detection.PanelDetector
+import org.kotatsu.panelview.settings.PanelReadingOrder
+import org.kotatsu.panelview.settings.PanelViewSettings
 import android.util.Log
 import org.koitharu.kotatsu.reader.domain.PageLoader
 import org.koitharu.kotatsu.reader.ui.ReaderState
@@ -58,6 +60,9 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private var loadJob: Job? = null
+
+    private lateinit var panelSettings: PanelViewSettings
+    private var currentReaderMode: ReaderMode? = null
 
     private var pages: List<ReaderPage> = emptyList()
     private var pageIndex: Int = 0
@@ -109,6 +114,28 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
     private lateinit var gestureDetector: GestureDetector
     private var fullPageMode: Boolean = false
 
+    private fun refreshPanelSettings(updateMask: Boolean = true) {
+        panelSettings = settings.panelViewSettings
+        reduceAnimations = settings.isPanelReduceAnimations
+        updateReadingDirection()
+        if (updateMask) {
+            viewBinding?.maskOverlay?.setMaskOpacity(panelSettings.enhancements.borderOpacity)
+        }
+    }
+
+    private fun updateReadingDirection(mode: ReaderMode? = currentReaderMode) {
+        currentReaderMode = mode ?: currentReaderMode
+        if (!this::panelSettings.isInitialized) {
+            return
+        }
+        val activeMode = currentReaderMode
+        isRtlPanels = when (panelSettings.readingOrder) {
+            PanelReadingOrder.STANDARD -> activeMode == ReaderMode.REVERSED
+            PanelReadingOrder.MANGA -> true
+            PanelReadingOrder.FOUR_KOMA -> false
+        }
+    }
+
     override fun onCreateViewBinding(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -118,11 +145,10 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
 
     override fun onViewBindingCreated(binding: FragmentReaderPanelBinding, savedInstanceState: Bundle?) {
         super.onViewBindingCreated(binding, savedInstanceState)
-        reduceAnimations = settings.isPanelReduceAnimations
-        // respect RTL if user selected reversed mode
-        isRtlPanels = (viewModel.readerMode.value == ReaderMode.REVERSED)
+        currentReaderMode = viewModel.readerMode.value
+        refreshPanelSettings()
         viewModel.readerMode.observe(viewLifecycleOwner) { mode ->
-            isRtlPanels = mode == ReaderMode.REVERSED
+            updateReadingDirection(mode)
         }
 
         gestureDetector = GestureDetector(binding.root.context, gestureListener)
@@ -144,6 +170,13 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
         // apply background from reader settings
         viewModel.readerSettingsProducer.observe(viewLifecycleOwner) { producer ->
             producer.applyBackground(binding.root)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (viewBinding != null) {
+            refreshPanelSettings()
         }
     }
 
@@ -254,8 +287,9 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
             val uri = withContext(Dispatchers.Default) { pageLoader.loadPage(page.toMangaPage(), force = false) }
             // Decode downsized bitmap for detection
             val localUri = withContext(Dispatchers.Default) { pageLoader.convertBimap(uri) }
+            refreshPanelSettings()
             val detection = withContext(Dispatchers.Default) { decodeBitmapForDetection(localUri) }
-            val rects = PanelDetector.detectPanels(detection.bitmap)
+            val rects = PanelDetector.detectPanels(detection.bitmap, panelSettings)
             val scaledRects = rects.map { r ->
                 Rect(
                     (r.left * detection.scaleX).roundToInt(),
@@ -264,7 +298,7 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
                     (r.bottom * detection.scaleY).roundToInt(),
                 )
             }
-            val ordered = PanelOrder.order(scaledRects, rtl = isRtlPanels)
+            val ordered = PanelOrder.order(scaledRects, panelSettings.readingOrder)
             // Fallback to full page in source coordinate space when no panels detected
             val fullW = (detection.bitmap.width * detection.scaleX).roundToInt()
             val fullH = (detection.bitmap.height * detection.scaleY).roundToInt()
@@ -292,10 +326,15 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
                     val ssiv = binding.ssiv
                     ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
                     ssiv.maxScale = 10f
-                    ssiv.panLimit = SubsamplingScaleImageView.PAN_LIMIT_INSIDE
+                    ssiv.panLimit = if (panelSettings.enhancements.panBound) {
+                        SubsamplingScaleImageView.PAN_LIMIT_INSIDE
+                    } else {
+                        SubsamplingScaleImageView.PAN_LIMIT_OUTSIDE
+                    }
                     ssiv.resetScaleAndCenter()
                     // Attach dark mask overlay
                     binding.maskOverlay.attach(ssiv)
+                    binding.maskOverlay.setMaskOpacity(panelSettings.enhancements.borderOpacity)
                     binding.maskOverlay.visibility = View.GONE
                 }
             })
@@ -321,7 +360,11 @@ class PanelReaderFragment : BaseReaderFragment<FragmentReaderPanelBinding>() {
         val vh = ssiv.height.toFloat().coerceAtLeast(1f)
         val rw = padded.width().toFloat().coerceAtLeast(1f)
         val rh = padded.height().toFloat().coerceAtLeast(1f)
-        val scale = minOf(vw / rw, vh / rh)
+        val scale = if (panelSettings.enhancements.fitToWidth) {
+            vw / rw
+        } else {
+            minOf(vw / rw, vh / rh)
+        }
         val center = PointF(padded.centerX().toFloat(), padded.centerY().toFloat())
         ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CUSTOM
         ssiv.minScale = scale
