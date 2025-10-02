@@ -3,11 +3,14 @@ package org.kotatsu.panelview.detection
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.util.Log
+import java.util.ArrayList
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import org.kotatsu.panelview.settings.PanelScanType
 import org.kotatsu.panelview.settings.PanelViewSettings
+
+private const val MIN_PANEL_SIZE = 48
 
 object PanelDetector {
 
@@ -16,39 +19,39 @@ object PanelDetector {
             return listOf(Rect(0, 0, bitmap.width, bitmap.height))
         }
 
-        val panels = when (settings.scanType) {
+        var panels = when (settings.scanType) {
             PanelScanType.REGULAR -> runRegularPipeline(bitmap)
             PanelScanType.IRREGULAR -> runIrregularPipeline(bitmap)
             PanelScanType.FOUR_QUADRANTS -> quadrants(bitmap)
             PanelScanType.WEBTOON -> webtoonSlices(bitmap, settings)
         }
 
-        if (panels.size > 1) {
-            return panels
-        }
-
-        if (settings.scanType == PanelScanType.REGULAR && settings.enhancements.autoSwitchIrregular) {
-            val fallback = runIrregularPipeline(bitmap)
-            if (fallback.size > 1) {
-                return fallback
-            }
-            if (fallback.isNotEmpty()) {
-                return fallback
+        if (panels.size <= 1 && settings.scanType == PanelScanType.REGULAR && settings.enhancements.autoSwitchIrregular) {
+            val irregularFallback = runIrregularPipeline(bitmap)
+            if (irregularFallback.isNotEmpty()) {
+                panels = irregularFallback
             }
         }
 
-        if (settings.frameDetection.inlineFrames && panels.size <= 1) {
-            val inline = inlineFallback(bitmap, settings.scanType)
-            if (inline.isNotEmpty()) {
-                return inline
+        if (settings.frameDetection.inlineFrames) {
+            val refined = refineInlinePanels(bitmap, panels)
+            if (refined.isNotEmpty()) {
+                panels = refined
+            }
+
+            if (panels.size <= 1) {
+                val inlineDefault = inlineFallback(bitmap, settings.scanType)
+                if (inlineDefault.isNotEmpty()) {
+                    panels = inlineDefault
+                }
             }
         }
 
-        return if (panels.isNotEmpty()) {
-            panels
-        } else {
-            listOf(Rect(0, 0, bitmap.width, bitmap.height))
+        if (panels.isEmpty()) {
+            panels = listOf(Rect(0, 0, bitmap.width, bitmap.height))
         }
+
+        return panels
     }
 
     private suspend fun runRegularPipeline(bitmap: Bitmap): List<Rect> {
@@ -130,6 +133,56 @@ object PanelDetector {
         return rects
     }
 
+    private fun refineInlinePanels(bitmap: Bitmap, panels: List<Rect>): List<Rect> {
+        if (panels.isEmpty()) {
+            return emptyList()
+        }
+        val refined = ArrayList<Rect>(panels.size)
+        var didSplit = false
+        panels.forEach { sourceRect ->
+            val clipped = sourceRect.clampedToBitmap(bitmap)
+            if (clipped == null) {
+                refined += sourceRect
+                return@forEach
+            }
+            val width = clipped.width()
+            val height = clipped.height()
+            if (width < MIN_PANEL_SIZE || height < MIN_PANEL_SIZE) {
+                refined += clipped
+                return@forEach
+            }
+
+            val subset = runCatching {
+                Bitmap.createBitmap(bitmap, clipped.left, clipped.top, width, height)
+            }.getOrNull()
+            if (subset == null) {
+                refined += clipped
+                return@forEach
+            }
+
+            val detected = SimpleGutterDetector.detect(subset)
+                .map { child ->
+                    Rect(
+                        child.left + clipped.left,
+                        child.top + clipped.top,
+                        child.right + clipped.left,
+                        child.bottom + clipped.top,
+                    )
+                }
+                .filter { child -> child.width() >= MIN_PANEL_SIZE && child.height() >= MIN_PANEL_SIZE }
+
+            subset.recycle()
+
+            if (detected.size > 1) {
+                didSplit = true
+                refined += detected
+            } else {
+                refined += clipped
+            }
+        }
+        return if (didSplit) refined else panels
+    }
+
     private fun inlineFallback(bitmap: Bitmap, scanType: PanelScanType): List<Rect> {
         val w = bitmap.width
         val h = bitmap.height
@@ -162,5 +215,17 @@ object PanelDetector {
             top = bottom
         }
         return rects
+    }
+
+    private fun Rect.clampedToBitmap(bitmap: Bitmap): Rect? {
+        val leftBound = left.coerceIn(0, bitmap.width)
+        val topBound = top.coerceIn(0, bitmap.height)
+        val rightBound = right.coerceIn(leftBound + 1, bitmap.width)
+        val bottomBound = bottom.coerceIn(topBound + 1, bitmap.height)
+        return if (leftBound < rightBound && topBound < bottomBound) {
+            Rect(leftBound, topBound, rightBound, bottomBound)
+        } else {
+            null
+        }
     }
 }

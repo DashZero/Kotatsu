@@ -7,7 +7,6 @@ import android.view.View
 import androidx.preference.ListPreference
 import androidx.preference.MultiSelectListPreference
 import androidx.preference.Preference
-import androidx.preference.PreferenceManager
 import dagger.hilt.android.AndroidEntryPoint
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.model.ZoomMode
@@ -101,12 +100,6 @@ class ReaderSettingsFragment :
 			AppSettings.KEY_PANEL_VIEW_ENABLED -> {
 				val enabled = sharedPreferences?.getBoolean(AppSettings.KEY_PANEL_VIEW_ENABLED, false) == true
 				panelViewBinder.setVisible(enabled)
-				val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
-				if (enabled) {
-					prefs.edit().putString(AppSettings.KEY_READER_MODE, ReaderMode.PANEL.name).apply()
-				} else if (settings.defaultReaderMode == ReaderMode.PANEL) {
-					prefs.edit().putString(AppSettings.KEY_READER_MODE, ReaderMode.STANDARD.name).apply()
-				}
 			}
 		}
 	}

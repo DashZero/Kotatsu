@@ -877,7 +877,7 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		get() = prefs.getBoolean(KEY_PANEL_AUTO_SWITCH_IRREGULAR, false)
 
 	val isPanelFitToWidth: Boolean
-		get() = prefs.getBoolean(KEY_PANEL_FIT_TO_WIDTH, false)
+		get() = prefs.getBoolean(KEY_PANEL_FIT_TO_WIDTH, true)
 
 	val isPanelPanBound: Boolean
 		get() = prefs.getBoolean(KEY_PANEL_PAN_BOUND, true)
