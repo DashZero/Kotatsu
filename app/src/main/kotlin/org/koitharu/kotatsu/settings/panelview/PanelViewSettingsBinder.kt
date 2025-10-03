@@ -37,20 +37,16 @@ class PanelViewSettingsBinder(private val fragment: PreferenceFragmentCompat) {
 
     fun updateVisibility(readerMode: ReaderMode) {
         val visible = readerMode == ReaderMode.PANEL
-        (CATEGORY_KEYS + PANEL_PREF_KEYS).forEach { key ->
+        PANEL_KEYS.forEach { key ->
             fragment.findPreference<Preference>(key)?.isVisible = visible
         }
     }
 
     companion object {
-        private val CATEGORY_KEYS = arrayOf(
-            PANEL_CATEGORY_FRAME,
-            PANEL_CATEGORY_SCAN,
-            PANEL_CATEGORY_READING,
-            PANEL_CATEGORY_ENHANCEMENTS,
-        )
+        private const val PANEL_VIEW_CATEGORY_KEY = "panel_view_settings_group"
 
-        private val PANEL_PREF_KEYS = arrayOf(
+        private val PANEL_KEYS = arrayOf(
+            PANEL_VIEW_CATEGORY_KEY,
             AppSettings.KEY_PANEL_DISABLE_FRAME,
             AppSettings.KEY_PANEL_INLINE_FRAMES,
             AppSettings.KEY_PANEL_SCAN_TYPE,
@@ -61,10 +57,5 @@ class PanelViewSettingsBinder(private val fragment: PreferenceFragmentCompat) {
             AppSettings.KEY_PANEL_BORDER_OPACITY,
             AppSettings.KEY_PANEL_REDUCE_ANIMATIONS,
         )
-
-        const val PANEL_CATEGORY_FRAME = "panel_frame_detection_category"
-        const val PANEL_CATEGORY_SCAN = "panel_scan_type_category"
-        const val PANEL_CATEGORY_READING = "panel_reading_order_category"
-        const val PANEL_CATEGORY_ENHANCEMENTS = "panel_enhancements_category"
     }
 }

@@ -1,4 +1,4 @@
-package org.kotatsu.panelview.detection
+﻿package org.kotatsu.panelview.detection
 
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -8,12 +8,16 @@ import java.util.ArrayList
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import org.kotatsu.panelview.settings.PanelScanType
 import org.kotatsu.panelview.settings.PanelViewSettings
 
 private const val MIN_PANEL_SIZE = 48
 private const val MAX_TRIM_RATIO = 0.25f
 private const val WHITE_THRESHOLD = 230
+private const val INLINE_WHITESPACE_THRESHOLD = 0.88f
+private const val INLINE_MAX_SIDE = 960
+private const val INLINE_MIN_GUTTER_DENOM = 180
 
 object PanelDetector {
 
@@ -140,7 +144,7 @@ object PanelDetector {
         if (panels.isEmpty()) {
             return emptyList()
         }
-        val refined = ArrayList<Rect>(panels.size)
+        val refined = ArrayList<Rect>()
         panels.forEach { sourceRect ->
             val clipped = sourceRect.clampedToBitmap(bitmap) ?: run {
                 refined += sourceRect
@@ -160,24 +164,35 @@ object PanelDetector {
                 return@forEach
             }
 
-            val detected = SimpleGutterDetector.detect(subset)
-                .map { child ->
-                    Rect(
-                        child.left + trimmed.left,
-                        child.top + trimmed.top,
-                        child.right + trimmed.left,
-                        child.bottom + trimmed.top,
-                    )
-                }
-                .filter { child -> child.width() >= MIN_PANEL_SIZE && child.height() >= MIN_PANEL_SIZE }
+            val children = mutableListOf<Rect>()
+
+            children += runCatching { SimpleGutterDetector.detect(subset) }
+                .onFailure { Log.d("PanelDetector", "Inline simple detector failed", it) }
+                .getOrDefault(emptyList())
+                .mapNotNull { it.offsetAndClamp(trimmed) }
+
+            children += runCatching { OpenCVPanelDetector.detect(subset) }
+                .onFailure { Log.d("PanelDetector", "Inline OpenCV detector failed", it) }
+                .getOrDefault(emptyList())
+                .mapNotNull { it.offsetAndClamp(trimmed) }
+
+            children += detectInlineByProjection(subset, trimmed)
 
             subset.recycle()
 
-            if (detected.size > 1) {
+            val normalized = mergeRectangles(children)
+                .filter { it.width() >= MIN_PANEL_SIZE && it.height() >= MIN_PANEL_SIZE }
+                .sortedWith(compareBy<Rect> { it.top }.thenBy { it.left })
 
-                refined += detected
+            if (normalized.size > 1) {
+                refined += normalized
             } else {
-                refined += trimmed
+                val candidate = normalized.firstOrNull()
+                if (candidate != null && candidate.area() < trimmed.area() * 0.98f) {
+                    refined += candidate
+                } else {
+                    refined += trimmed
+                }
             }
         }
         return refined
@@ -229,14 +244,237 @@ object PanelDetector {
         }
     }
 
+    private fun Rect.offsetAndClamp(base: Rect): Rect? {
+        val absolute = Rect(this)
+        absolute.offset(base.left, base.top)
+        return if (absolute.intersect(base)) absolute else null
+    }
+
+    private fun Rect.area(): Int = max(0, width()) * max(0, height())
+
+    private fun mergeRectangles(rects: List<Rect>): List<Rect> {
+        if (rects.isEmpty()) return emptyList()
+        val merged = mutableListOf<Rect>()
+        rects.sortedWith(compareBy<Rect> { it.top }.thenBy { it.left }).forEach { rect ->
+            var consumed = false
+            for (i in merged.indices) {
+                val existing = merged[i]
+                if (shouldMerge(existing, rect)) {
+                    merged[i] = Rect(
+                        min(existing.left, rect.left),
+                        min(existing.top, rect.top),
+                        max(existing.right, rect.right),
+                        max(existing.bottom, rect.bottom),
+                    )
+                    consumed = true
+                    break
+                }
+            }
+            if (!consumed) {
+                merged += Rect(rect)
+            }
+        }
+        return merged
+    }
+
+    private fun shouldMerge(a: Rect, b: Rect): Boolean {
+        if (Rect.intersects(a, b) || a.contains(b) || b.contains(a)) {
+            return true
+        }
+        val overlap = intersectionArea(a, b)
+        if (overlap == 0) {
+            return false
+        }
+        val minArea = min(a.area(), b.area()).coerceAtLeast(1)
+        return overlap / minArea.toFloat() >= 0.75f
+    }
+
+    private fun intersectionArea(a: Rect, b: Rect): Int {
+        val left = max(a.left, b.left)
+        val top = max(a.top, b.top)
+        val right = min(a.right, b.right)
+        val bottom = min(a.bottom, b.bottom)
+        return if (right > left && bottom > top) (right - left) * (bottom - top) else 0
+    }
+
+    private fun detectInlineByProjection(subset: Bitmap, baseRect: Rect): List<Rect> {
+        if (subset.width < MIN_PANEL_SIZE || subset.height < MIN_PANEL_SIZE) {
+            return emptyList()
+        }
+        val scale = minOf(
+            INLINE_MAX_SIDE.toFloat() / subset.width,
+            INLINE_MAX_SIDE.toFloat() / subset.height,
+            1f,
+        )
+        val scaled = if (scale < 0.999f) {
+            Bitmap.createScaledBitmap(
+                subset,
+                max(2, (subset.width * scale).roundToInt()),
+                max(2, (subset.height * scale).roundToInt()),
+                true,
+            )
+        } else subset
+
+        val w = scaled.width
+        val h = scaled.height
+        val pixels = IntArray(w * h)
+        scaled.getPixels(pixels, 0, w, 0, 0, w, h)
+
+        val hist = IntArray(256)
+        for (pixel in pixels) {
+            val r = (pixel shr 16) and 0xFF
+            val g = (pixel shr 8) and 0xFF
+            val b = pixel and 0xFF
+            val y = (0.2126f * r + 0.7152f * g + 0.0722f * b).toInt().coerceIn(0, 255)
+            hist[y]++
+        }
+        var cumulative = 0
+        val target = (pixels.size * 0.88f).toInt()
+        var luminanceThreshold = 235
+        for (i in 0..255) {
+            cumulative += hist[i]
+            if (cumulative >= target) {
+                luminanceThreshold = i
+                break
+            }
+        }
+        luminanceThreshold = luminanceThreshold.coerceIn(190, 250)
+
+        val rowWhite = FloatArray(h)
+        val colWhite = FloatArray(w)
+        for (y in 0 until h) {
+            var whiteCount = 0
+            val rowOffset = y * w
+            for (x in 0 until w) {
+                val pixel = pixels[rowOffset + x]
+                val r = (pixel shr 16) and 0xFF
+                val g = (pixel shr 8) and 0xFF
+                val b = pixel and 0xFF
+                val yL = (0.2126f * r + 0.7152f * g + 0.0722f * b)
+                if (yL >= luminanceThreshold) {
+                    whiteCount++
+                    colWhite[x] += 1f
+                }
+            }
+            rowWhite[y] = whiteCount / w.toFloat()
+        }
+        for (x in 0 until w) {
+            colWhite[x] = colWhite[x] / h.toFloat()
+        }
+
+        val minRowGutter = max(2, h / INLINE_MIN_GUTTER_DENOM)
+        val minColGutter = max(2, w / INLINE_MIN_GUTTER_DENOM)
+        val horizontalCuts = findAdaptiveGutters(rowWhite, minRowGutter, INLINE_WHITESPACE_THRESHOLD)
+        val verticalCuts = findAdaptiveGutters(colWhite, minColGutter, INLINE_WHITESPACE_THRESHOLD)
+
+        val rows = mutableListOf(0)
+        rows.addAll(horizontalCuts)
+        rows += h
+        val cols = mutableListOf(0)
+        cols.addAll(verticalCuts)
+        cols += w
+
+        val invScale = if (scale <= 0f) 1f else 1f / scale
+        val candidates = mutableListOf<Rect>()
+        for (ri in 0 until rows.lastIndex) {
+            val top = rows[ri]
+            val bottom = rows[ri + 1]
+            for (ci in 0 until cols.lastIndex) {
+                val left = cols[ci]
+                val right = cols[ci + 1]
+                if (bottom <= top || right <= left) continue
+                val absLeft = (left * invScale).roundToInt() + baseRect.left
+                val absTop = (top * invScale).roundToInt() + baseRect.top
+                val absRight = (right * invScale).roundToInt() + baseRect.left
+                val absBottom = (bottom * invScale).roundToInt() + baseRect.top
+                val rect = Rect(absLeft, absTop, absRight, absBottom)
+                if (rect.width() < MIN_PANEL_SIZE || rect.height() < MIN_PANEL_SIZE) continue
+                if (!isRegionMostlyWhite(pixels, w, h, left, top, right, bottom, luminanceThreshold)) {
+                    if (rect.intersect(baseRect) && !rect.isEmpty) {
+                        candidates += rect
+                    }
+                }
+            }
+        }
+
+        if (scaled !== subset) {
+            scaled.recycle()
+        }
+        return candidates
+    }
+
+    private fun findAdaptiveGutters(profile: FloatArray, minLen: Int, threshold: Float): List<Int> {
+        if (profile.isEmpty()) return emptyList()
+        val cuts = mutableListOf<Int>()
+        var runStart = -1
+        for (index in profile.indices) {
+            val value = profile[index]
+            if (value >= threshold) {
+                if (runStart == -1) runStart = index
+            } else if (runStart != -1) {
+                val len = index - runStart
+                if (len >= minLen) {
+                    cuts += runStart + len / 2
+                }
+                runStart = -1
+            }
+        }
+        if (runStart != -1) {
+            val len = profile.size - runStart
+            if (len >= minLen) {
+                cuts += runStart + len / 2
+            }
+        }
+        cuts.sort()
+        val deduped = mutableListOf<Int>()
+        for (cut in cuts) {
+            if (deduped.isEmpty() || cut - deduped.last() > minLen) {
+                deduped += cut
+            }
+        }
+        return deduped
+    }
+
+    private fun isRegionMostlyWhite(
+        pixels: IntArray,
+        width: Int,
+        height: Int,
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int,
+        threshold: Int,
+        whiteThreshold: Float = 0.9f,
+    ): Boolean {
+        val clampedLeft = left.coerceIn(0, width - 1)
+        val clampedTop = top.coerceIn(0, height - 1)
+        val clampedRight = right.coerceIn(clampedLeft + 1, width)
+        val clampedBottom = bottom.coerceIn(clampedTop + 1, height)
+        var white = 0
+        var total = 0
+        for (y in clampedTop until clampedBottom) {
+            val rowOffset = y * width
+            for (x in clampedLeft until clampedRight) {
+                val pixel = pixels[rowOffset + x]
+                val r = (pixel shr 16) and 0xFF
+                val g = (pixel shr 8) and 0xFF
+                val b = pixel and 0xFF
+                val yL = (0.2126f * r + 0.7152f * g + 0.0722f * b)
+                if (yL >= threshold) white++
+                total++
+            }
+        }
+        return total > 0 && white / total.toFloat() >= whiteThreshold
+    }
+
     private fun Bitmap.trimWhitespace(rect: Rect): Rect {
         var left = rect.left
         var right = rect.right
         var top = rect.top
         var bottom = rect.bottom
 
-        val maxHorizontalTrim = max(1, ((rect.width() * MAX_TRIM_RATIO).toInt()))
-        val maxVerticalTrim = max(1, ((rect.height() * MAX_TRIM_RATIO).toInt()))
+        val maxHorizontalTrim = max(1, (rect.width() * MAX_TRIM_RATIO).toInt())
+        val maxVerticalTrim = max(1, (rect.height() * MAX_TRIM_RATIO).toInt())
         val sampleStepX = max(1, rect.width() / 96)
         val sampleStepY = max(1, rect.height() / 96)
 
@@ -305,3 +543,4 @@ object PanelDetector {
         return a > 200 && r > WHITE_THRESHOLD && g > WHITE_THRESHOLD && b > WHITE_THRESHOLD
     }
 }
+
