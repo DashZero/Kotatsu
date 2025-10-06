@@ -7,6 +7,7 @@ import androidx.fragment.app.commit
 import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.core.prefs.ReaderMode
 import org.koitharu.kotatsu.core.util.ext.findKeyByValue
+import org.koitharu.kotatsu.panelview.ui.pager.PanelReaderFragment
 import org.koitharu.kotatsu.reader.ui.pager.BaseReaderFragment
 import org.koitharu.kotatsu.reader.ui.pager.doublepage.DoubleReaderFragment
 import org.koitharu.kotatsu.reader.ui.pager.doublereversed.ReversedDoubleReaderFragment
@@ -69,6 +70,7 @@ class ReaderManager(
 		}
 		modeMap[ReaderMode.WEBTOON] = WebtoonReaderFragment::class.java
 		modeMap[ReaderMode.VERTICAL] = VerticalReaderFragment::class.java
+		modeMap[ReaderMode.PANEL] = PanelReaderFragment::class.java
 	}
 
 	private fun isLandscape() = container.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE

@@ -20,6 +20,8 @@
 /.idea/render.experimental.xml
 /.idea/inspectionProfiles/
 .DS_Store
+/tools
+/panelview
 /build
 /captures
 .externalNativeBuild

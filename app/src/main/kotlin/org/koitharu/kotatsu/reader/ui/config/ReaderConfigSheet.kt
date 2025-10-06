@@ -84,6 +84,7 @@ class ReaderConfigSheet :
 		binding.buttonReversed.isChecked = mode == ReaderMode.REVERSED
 		binding.buttonWebtoon.isChecked = mode == ReaderMode.WEBTOON
 		binding.buttonVertical.isChecked = mode == ReaderMode.VERTICAL
+		binding.buttonPanel.isChecked = mode == ReaderMode.PANEL
 		binding.switchDoubleReader.isChecked = settings.isReaderDoubleOnLandscape
 		binding.switchDoubleReader.isEnabled = mode == ReaderMode.STANDARD || mode == ReaderMode.REVERSED
 
@@ -188,6 +189,7 @@ class ReaderConfigSheet :
 			R.id.button_webtoon -> ReaderMode.WEBTOON
 			R.id.button_reversed -> ReaderMode.REVERSED
 			R.id.button_vertical -> ReaderMode.VERTICAL
+			R.id.button_panel -> ReaderMode.PANEL
 			else -> return
 		}
 		viewBinding?.switchDoubleReader?.isEnabled = newMode == ReaderMode.STANDARD || newMode == ReaderMode.REVERSED
@@ -237,3 +239,4 @@ class ReaderConfigSheet :
 		fun onBookmarkClick()
 	}
 }
+

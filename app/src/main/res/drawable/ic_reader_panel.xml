@@ -1,0 +1,12 @@
+<!-- Panel View -->
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="?attr/colorOnSurface"
+        android:fillType="nonZero"
+        android:pathData="M3,4h11v8H3zM16,4h5v12h-5zM3,13h11v7H3z"/>
+</vector>

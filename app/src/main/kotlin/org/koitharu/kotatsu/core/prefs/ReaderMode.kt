@@ -9,6 +9,7 @@ enum class ReaderMode(val id: Int) {
 	REVERSED(3),
 	VERTICAL(4),
 	WEBTOON(2),
+	PANEL(5),
 	;
 
 	companion object {

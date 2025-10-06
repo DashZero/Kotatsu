@@ -178,6 +178,7 @@ dependencies {
 	implementation libs.coil.svg
 	implementation libs.avif.decoder
 	implementation libs.ssiv
+	implementation "com.quickbirdstudios:opencv:4.5.3"
 	implementation libs.disk.lru.cache
 	implementation libs.markwon
 	implementation libs.kizzyrpc

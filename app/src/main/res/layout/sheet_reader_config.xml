@@ -104,7 +104,16 @@
 					android:layout_weight="1"
 					android:text="@string/webtoon"
 					app:icon="@drawable/ic_script" />
-
+<!-- Panel View -->
+				<com.google.android.material.button.MaterialButton
+					android:id="@+id/button_panel"
+					style="@style/Widget.Kotatsu.ToggleButton.Vertical"
+					android:layout_width="0dp"
+					android:layout_height="wrap_content"
+					android:layout_weight="1"
+					android:text="@string/panel_view"
+					app:icon="@drawable/ic_reader_panel" />
+<!-- Panel View -->
 			</com.google.android.material.button.MaterialButtonToggleGroup>
 
 			<TextView
@@ -180,3 +189,4 @@
 
 	</androidx.core.widget.NestedScrollView>
 </LinearLayout>
+
