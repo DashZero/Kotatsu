@@ -14,8 +14,8 @@
 	<string name="list_mode">List mode</string>
 	<string name="settings">Settings</string>
 	<string name="remote_sources">Manga sources</string>
-	<string name="loading_">LoadingÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦</string>
-	<string name="computing_">ComputingÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦</string>
+	<string name="loading_">Loading…</string>
+	<string name="computing_">Computing…</string>
 	<string name="chapter_d_of_d">Chapter %1$d of %2$d</string>
 	<string name="close">Close</string>
 	<string name="try_again">Try again</string>
@@ -35,8 +35,8 @@
 	<string name="share_s">Share %s</string>
 	<string name="search">Search</string>
 	<string name="search_manga">Search manga</string>
-	<string name="manga_downloading_">DownloadingÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦</string>
-	<string name="processing_">ProcessingÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦</string>
+	<string name="manga_downloading_">Downloading…</string>
+	<string name="processing_">Processing…</string>
 	<string name="download_complete">Downloaded</string>
 	<string name="downloads">Downloads</string>
 	<string name="by_name">Name</string>
@@ -80,10 +80,10 @@
 	<string name="reduce_animations">Reduce animations</string>
 	<string name="reduce_animations_summary">Make panel transitions instant</string>
 	<string name="panel_frame_detection_title">Panel Detection</string>
-	<string name="panel_disable_frame_title">Disable Panel Detection</string>
-	<string name="panel_disable_frame_summary">Display the full page as a single image.</string>
-	<string name="panel_inline_frames_title">Smart Panel Detection</string>
-	<string name="panel_inline_frames_summary">Automatically find panels on pages with uneven spacing.</string>
+	<string name="panel_mode_enabled_title">Panel view mode</string>
+	<string name="panel_mode_enabled_summary">Detect panels automatically and navigate one panel at a time.</string>
+	<string name="panel_inline_frames_title">Smart panel splitting</string>
+	<string name="panel_inline_frames_summary">Look for extra gutters inside large panels to keep dialogue bubbles separate.</string>
 	<string name="panel_scan_type_title">Page Layout</string>
 	<string name="panel_scan_type_regular">Western</string>
 	<string name="panel_scan_type_irregular">Webtoon</string>
@@ -122,10 +122,10 @@
 	<string name="vibration">Vibration</string>
 	<string name="favourites_categories">Favorite categories</string>
 	<string name="remove_category">Remove</string>
-	<string name="text_empty_holder_primary">It\'s kind of empty hereÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦</string>
+	<string name="text_empty_holder_primary">It\'s kind of empty here…</string>
 	<string name="text_search_holder_secondary">Try to reformulate the query.</string>
 	<string name="text_history_holder_primary">What you read will be displayed here</string>
-	<string name="text_history_holder_secondary">Find what to read in the Ãƒâ€šÃ‚Â«ExploreÃƒâ€šÃ‚Â» section</string>
+	<string name="text_history_holder_secondary">Find what to read in the «Explore» section</string>
 	<string name="text_empty_holder_secondary_filtered">There are no manga matching the filters you selected</string>
 	<string name="text_local_holder_primary">Save something first</string>
 	<string name="text_local_holder_secondary">Save something from an online catalog or import it from a file.</string>
@@ -175,7 +175,7 @@
 	<string name="create_backup">Create data backup</string>
 	<string name="restore_backup">Restore from backup</string>
 	<string name="data_restored">Restored</string>
-	<string name="preparing_">PreparingÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦</string>
+	<string name="preparing_">Preparing…</string>
 	<string name="file_not_found">File not found</string>
 	<string name="data_restored_success">All data was restored</string>
 	<string name="data_restored_with_errors">The data was restored, but there are errors</string>
@@ -338,7 +338,7 @@
 	<string name="removed_from_favourites">Removed from favorites</string>
 	<string name="options">Options</string>
 	<string name="not_found_404">Content not found or removed</string>
-	<string name="download_summary_pattern" translatable="false">%1$s Ãƒâ€šÃ‚Â· %2$s</string>
+	<string name="download_summary_pattern" translatable="false">%1$s · %2$s</string>	
 	<string name="incognito_mode">Incognito mode</string>
 	<string name="no_chapters">No chapters</string>
 	<string name="automatic_scroll">Automatic scroll</string>
@@ -391,7 +391,7 @@
 	<string name="theme_name_mamimi">Mamimi</string>
 	<string name="theme_name_kanade">Kanade</string>
 	<string name="nothing_here">There is nothing here</string>
-	<string name="scrobbling_empty_hint">To track reading progress, select Menu ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Track on the manga details screen.</string>
+	<string name="scrobbling_empty_hint">To track reading progress, select Menu → Track on the manga details screen.</string>
 	<string name="services">Services</string>
 	<string name="allow_unstable_updates">Allow unstable updates</string>
 	<string name="allow_unstable_updates_summary">Receive notifications about unstable builds</string>

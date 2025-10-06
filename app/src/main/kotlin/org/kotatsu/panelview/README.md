@@ -19,14 +19,14 @@ Keep panel-reader specific assets, configs, and docs in this tree so the feature
 
 `PanelDetector.detectPanels(bitmap, settings)` is the single entry point. It is marked `suspend` so heavy detectors can hop to background dispatchers.
 
-1. Honor `settings.frameDetection.disableFrame` by short-circuiting to a full-page rect.
+1. Skip detection when `settings.detection.enabled` is false and return the full page.
 2. Choose the base pipeline from `settings.scanType`:
    - `REGULAR` -> `runRegularPipeline`: `OpenCVPanelDetector` -> `SimpleGutterDetector` -> `DeepPanelDetector`.
    - `IRREGULAR` -> `runIrregularPipeline`: prefer `SimpleGutterDetector`, fall back to OpenCV, then Deep.
    - `FOUR_QUADRANTS` -> deterministic 2x2 split.
    - `WEBTOON` -> `webtoonSlices`, adaptive vertical slicing by aspect ratio.
 3. If regular detection yields 1 or fewer panels and `autoSwitchIrregular` is enabled, retry the irregular pipeline.
-4. If `inlineFrames` is enabled, run `refineInlinePanels`:
+4. If smart splitting is enabled, run `refineInlinePanels`:
    - Trim whitespace around each candidate rect.
    - Spawn crop bitmaps and rerun `SimpleGutterDetector`, `OpenCVPanelDetector`, and the projection-based splitter (`detectInlineByProjection`).
    - Merge overlapping child rects, enforce `MIN_PANEL_SIZE`, and keep significant subdivisions.
@@ -53,7 +53,7 @@ When adding a detector:
 
 `PanelViewSettings` groups feature toggles so callers can choose the reading experience:
 
-- `PanelFrameDetectionOptions` : disable detection entirely or enable inline refinement.
+- `PanelDetectionOptions` : toggle panel view mode and smart splitting.
 - `PanelScanType` : selects the primary pipeline (regular, irregular, quadrants, webtoon).
 - `PanelEnhancementOptions` : currently used for auto-switching and display adjustments; extend cautiously.
 - `PanelReadingOrder` : consumed by `PanelOrder` to sort rectangles (standard left-to-right, manga right-to-left, four-koma vertical strips).

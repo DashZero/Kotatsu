@@ -9,8 +9,18 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import org.kotatsu.panelview.detection.mode.MangaDetector
+import org.kotatsu.panelview.detection.mode.StripDetector
+import org.kotatsu.panelview.detection.mode.WebtoonDetector
+import org.kotatsu.panelview.detection.mode.WesternDetector
+import org.kotatsu.panelview.settings.PanelReadingOrder
 import org.kotatsu.panelview.settings.PanelScanType
 import org.kotatsu.panelview.settings.PanelViewSettings
+import org.kotatsu.panelview.utils.DetectionMode
+import org.kotatsu.panelview.utils.PanelSorter
+import org.opencv.android.OpenCVLoader
+import org.opencv.android.Utils
+import org.opencv.core.Mat
 
 private const val MIN_PANEL_SIZE = 48
 private const val MAX_TRIM_RATIO = 0.25f
@@ -22,15 +32,34 @@ private const val INLINE_MIN_GUTTER_DENOM = 180
 object PanelDetector {
 
     suspend fun detectPanels(bitmap: Bitmap, settings: PanelViewSettings): List<Rect> {
-        if (settings.frameDetection.disableFrame) {
+        if (!settings.detection.enabled) {
             return listOf(Rect(0, 0, bitmap.width, bitmap.height))
         }
 
-        var panels = when (settings.scanType) {
-            PanelScanType.REGULAR -> runRegularPipeline(bitmap)
-            PanelScanType.IRREGULAR -> runIrregularPipeline(bitmap)
-            PanelScanType.FOUR_QUADRANTS -> quadrants(bitmap)
-            PanelScanType.WEBTOON -> webtoonSlices(bitmap, settings)
+        val requestedMode = resolveDetectionMode(settings)
+        val modeResult = when (settings.scanType) {
+            PanelScanType.FOUR_QUADRANTS -> quadrants(bitmap) to null
+            PanelScanType.WEBTOON -> runModePipelineWithFallback(
+                bitmap,
+                DetectionMode.WEBTOON,
+                { webtoonSlices(bitmap, settings) },
+                fallbackWhen = { it.size <= 1 },
+            )
+            PanelScanType.IRREGULAR -> runModePipelineWithFallback(
+                bitmap,
+                DetectionMode.WESTERN,
+                { runIrregularPipeline(bitmap) },
+            )
+            PanelScanType.REGULAR -> runModePipelineWithFallback(
+                bitmap,
+                requestedMode,
+                { runRegularPipeline(bitmap) },
+            )
+        }
+        var panels = modeResult.first
+        val detectionMode = modeResult.second
+        if (detectionMode != null) {
+            panels = PanelSorter.sortPanels(panels, detectionMode)
         }
 
         if (panels.size <= 1 && settings.scanType == PanelScanType.REGULAR && settings.enhancements.autoSwitchIrregular) {
@@ -40,7 +69,7 @@ object PanelDetector {
             }
         }
 
-        if (settings.frameDetection.inlineFrames) {
+        if (settings.detection.smartSplitting) {
             val refined = refineInlinePanels(bitmap, panels)
             if (refined.isNotEmpty()) {
                 panels = refined
@@ -126,7 +155,7 @@ object PanelDetector {
         if (w == 0 || h == 0) return emptyList()
         val aspect = h / w.toFloat()
         val baseSlices = if (aspect < 2f) 2 else ceil(aspect).toInt().coerceAtLeast(3)
-        val sliceCount = if (settings.frameDetection.inlineFrames) baseSlices + 1 else baseSlices
+        val sliceCount = if (settings.detection.smartSplitting) baseSlices + 1 else baseSlices
         val clampedSlices = sliceCount.coerceIn(2, 8)
         val step = max(1, h / clampedSlices)
         val rects = ArrayList<Rect>(clampedSlices)
@@ -542,5 +571,67 @@ object PanelDetector {
         val a = Color.alpha(color)
         return a > 200 && r > WHITE_THRESHOLD && g > WHITE_THRESHOLD && b > WHITE_THRESHOLD
     }
+
+    private fun resolveDetectionMode(settings: PanelViewSettings): DetectionMode {
+        return when (settings.scanType) {
+            PanelScanType.WEBTOON -> DetectionMode.WEBTOON
+            PanelScanType.IRREGULAR -> DetectionMode.WESTERN
+            PanelScanType.FOUR_QUADRANTS -> DetectionMode.STRIP
+            PanelScanType.REGULAR -> when (settings.readingOrder) {
+                PanelReadingOrder.MANGA -> DetectionMode.MANGA
+                PanelReadingOrder.FOUR_KOMA -> DetectionMode.STRIP
+                else -> DetectionMode.AUTO
+            }
+        }
+    }
+
+    private suspend fun runModePipelineWithFallback(
+        bitmap: Bitmap,
+        requestedMode: DetectionMode,
+        fallback: suspend () -> List<Rect>,
+        fallbackWhen: (List<Rect>) -> Boolean = { it.isEmpty() },
+    ): Pair<List<Rect>, DetectionMode?> {
+        val modeResult = runModePipeline(bitmap, requestedMode)
+        if (modeResult != null) {
+            val (rects, mode) = modeResult
+            if (!fallbackWhen(rects)) {
+                return rects to mode
+            }
+        }
+        return fallback() to null
+    }
+
+    private fun runModePipeline(bitmap: Bitmap, requestedMode: DetectionMode): Pair<List<Rect>, DetectionMode>? {
+        if (!OpenCVLoader.initDebug()) {
+            return null
+        }
+        val page = Mat()
+        return try {
+            Utils.bitmapToMat(bitmap, page)
+            val actualMode = if (requestedMode == DetectionMode.AUTO) {
+                DetectionModeManager.detectMode(bitmap)
+            } else {
+                requestedMode
+            }
+            val rects = detectPanels(page, bitmap.width, bitmap.height, actualMode)
+            rects to actualMode
+        } catch (t: Throwable) {
+            Log.w("PanelDetector", "Mode pipeline failed for $requestedMode", t)
+            null
+        } finally {
+            page.release()
+        }
+    }
+
+    fun detectPanels(page: Mat, w: Int, h: Int, mode: DetectionMode): List<Rect> {
+        return when (mode) {
+            DetectionMode.MANGA -> MangaDetector.detect(page, w, h)
+            DetectionMode.WESTERN -> WesternDetector.detect(page, w, h)
+            DetectionMode.STRIP -> StripDetector.detect(page, w, h)
+            DetectionMode.WEBTOON -> WebtoonDetector.detect(page, w, h)
+            DetectionMode.AUTO -> MangaDetector.detect(page, w, h)
+        }
+    }
+
 }
 

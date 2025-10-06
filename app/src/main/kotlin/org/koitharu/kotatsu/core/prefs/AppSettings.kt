@@ -39,7 +39,7 @@ import org.koitharu.kotatsu.parsers.util.mapToSet
 import org.koitharu.kotatsu.parsers.util.nullIfEmpty
 import org.koitharu.kotatsu.reader.domain.ReaderColorFilter
 import org.kotatsu.panelview.settings.PanelEnhancementOptions
-import org.kotatsu.panelview.settings.PanelFrameDetectionOptions
+import org.kotatsu.panelview.settings.PanelDetectionOptions
 import org.kotatsu.panelview.settings.PanelReadingOrder
 import org.kotatsu.panelview.settings.PanelScanType
 import org.kotatsu.panelview.settings.PanelViewSettings
@@ -809,7 +809,8 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 
 		const val KEY_PANEL_SCAN_TYPE = "panel_scan_type"
 		const val KEY_PANEL_READING_ORDER = "panel_reading_order"
-		const val KEY_PANEL_DISABLE_FRAME = "panel_disable_frame"
+		const val KEY_PANEL_DISABLE_FRAME = "panel_disable_frame" // legacy, kept for migration
+		const val KEY_PANEL_MODE_ENABLED = "panel_mode_enabled"
 		const val KEY_PANEL_INLINE_FRAMES = "panel_inline_frames"
 		const val KEY_PANEL_AUTO_SWITCH_IRREGULAR = "panel_auto_switch_irregular"
 		const val KEY_PANEL_FIT_TO_WIDTH = "panel_fit_to_width"
@@ -844,9 +845,9 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 
 	val panelViewSettings: PanelViewSettings
 		get() = PanelViewSettings(
-			frameDetection = PanelFrameDetectionOptions(
-				disableFrame = isPanelFrameDetectionDisabled,
-				inlineFrames = isPanelInlineFramesEnabled,
+			detection = PanelDetectionOptions(
+				enabled = isPanelModeEnabled,
+				smartSplitting = isPanelSmartSplitEnabled,
 			),
 			scanType = panelScanType,
 			readingOrder = panelReadingOrder,
@@ -864,14 +865,19 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 	val panelReadingOrder: PanelReadingOrder
 		get() = prefs.getEnumValue(KEY_PANEL_READING_ORDER, PanelReadingOrder.STANDARD)
 
-	val isPanelFrameDetectionDisabled: Boolean
-		get() = prefs.getBoolean(KEY_PANEL_DISABLE_FRAME, false)
+	val isPanelModeEnabled: Boolean
+		get() {
+			if (!prefs.contains(KEY_PANEL_MODE_ENABLED)) {
+				return !prefs.getBoolean(KEY_PANEL_DISABLE_FRAME, false)
+			}
+			return prefs.getBoolean(KEY_PANEL_MODE_ENABLED, true)
+		}
 
-	val isPanelInlineFramesEnabled: Boolean
-		get() = prefs.getBoolean(KEY_PANEL_INLINE_FRAMES, false)
+	val isPanelSmartSplitEnabled: Boolean
+		get() = prefs.getBoolean(KEY_PANEL_INLINE_FRAMES, true)
 
 	val isPanelAutoSwitchIrregular: Boolean
-		get() = prefs.getBoolean(KEY_PANEL_AUTO_SWITCH_IRREGULAR, false)
+		get() = prefs.getBoolean(KEY_PANEL_AUTO_SWITCH_IRREGULAR, true)
 
 	val isPanelFitToWidth: Boolean
 		get() = prefs.getBoolean(KEY_PANEL_FIT_TO_WIDTH, true)
@@ -883,5 +889,6 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		get() = (prefs.getInt(KEY_PANEL_BORDER_OPACITY, 60).coerceIn(0, 100)) / 100f
 
 	val isPanelReduceAnimations: Boolean
+		get() = prefs.getBoolean(KEY_PANEL_REDUCE_ANIMATIONS, false)
 		get() = prefs.getBoolean(KEY_PANEL_REDUCE_ANIMATIONS, false)
 }

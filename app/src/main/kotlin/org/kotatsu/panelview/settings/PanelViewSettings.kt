@@ -1,4 +1,4 @@
-﻿package org.kotatsu.panelview.settings
+package org.kotatsu.panelview.settings
 
 import androidx.annotation.FloatRange
 
@@ -15,9 +15,9 @@ enum class PanelReadingOrder {
     FOUR_KOMA,
 }
 
-data class PanelFrameDetectionOptions(
-    val disableFrame: Boolean,
-    val inlineFrames: Boolean,
+data class PanelDetectionOptions(
+    val enabled: Boolean,
+    val smartSplitting: Boolean,
 )
 
 data class PanelEnhancementOptions(
@@ -29,7 +29,7 @@ data class PanelEnhancementOptions(
 )
 
 data class PanelViewSettings(
-    val frameDetection: PanelFrameDetectionOptions,
+    val detection: PanelDetectionOptions,
     val scanType: PanelScanType,
     val readingOrder: PanelReadingOrder,
     val enhancements: PanelEnhancementOptions,

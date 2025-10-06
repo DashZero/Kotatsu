@@ -21,6 +21,7 @@
 /.idea/inspectionProfiles/
 .DS_Store
 /panelview
+/tools
 /build
 /captures
 .externalNativeBuild
