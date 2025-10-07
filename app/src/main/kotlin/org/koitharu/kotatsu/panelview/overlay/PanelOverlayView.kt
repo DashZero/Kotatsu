@@ -4,9 +4,12 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 
 class PanelOverlayView @JvmOverloads constructor(
     context: Context,
@@ -15,22 +18,25 @@ class PanelOverlayView @JvmOverloads constructor(
 
     private val overlayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(96, 33, 150, 243)
+        color = Color.argb(48, 33, 150, 243)
     }
     private val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.argb(160, 255, 193, 7)
+        color = Color.argb(96, 255, 213, 79)
     }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         color = Color.WHITE
-        strokeWidth = resources.displayMetrics.density * 2f
+        strokeWidth = resources.displayMetrics.density * 1.5f
     }
 
-    private var contentWidth = 1
-    private var contentHeight = 1
+    private var imageView: SubsamplingScaleImageView? = null
     private var panels: List<Rect> = emptyList()
     private var highlightedIndex = -1
+
+    private val tmpRectF = RectF()
+    private val tmpPointTL = PointF()
+    private val tmpPointBR = PointF()
 
     var overlayOpacity: Float
         get() = overlayPaint.alpha / 255f
@@ -40,10 +46,9 @@ class PanelOverlayView @JvmOverloads constructor(
             invalidate()
         }
 
-    fun setContentBounds(width: Int, height: Int) {
-        if (width <= 0 || height <= 0) return
-        contentWidth = width
-        contentHeight = height
+    fun attachTo(imageView: SubsamplingScaleImageView) {
+        if (this.imageView === imageView) return
+        this.imageView = imageView
         invalidate()
     }
 
@@ -62,19 +67,21 @@ class PanelOverlayView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (panels.isEmpty()) return
-        val scaleX = width / contentWidth.toFloat()
-        val scaleY = height / contentHeight.toFloat()
+        val ssiv = imageView ?: return
+        if (!ssiv.isReady || panels.isEmpty()) {
+            return
+        }
         panels.forEachIndexed { index, rect ->
-            val scaled = Rect(
-                (rect.left * scaleX).toInt(),
-                (rect.top * scaleY).toInt(),
-                (rect.right * scaleX).toInt(),
-                (rect.bottom * scaleY).toInt(),
-            )
-            val paint = if (index == highlightedIndex) highlightPaint else overlayPaint
-            canvas.drawRect(scaled, paint)
-            canvas.drawRect(scaled, borderPaint)
+            if (!rect.isEmpty) {
+                val tl = ssiv.sourceToViewCoord(rect.left.toFloat(), rect.top.toFloat(), tmpPointTL)
+                val br = ssiv.sourceToViewCoord(rect.right.toFloat(), rect.bottom.toFloat(), tmpPointBR)
+                if (tl != null && br != null) {
+                    tmpRectF.set(tl.x, tl.y, br.x, br.y)
+                    val paint = if (index == highlightedIndex) highlightPaint else overlayPaint
+                    canvas.drawRect(tmpRectF, paint)
+                    canvas.drawRect(tmpRectF, borderPaint)
+                }
+            }
         }
     }
 }

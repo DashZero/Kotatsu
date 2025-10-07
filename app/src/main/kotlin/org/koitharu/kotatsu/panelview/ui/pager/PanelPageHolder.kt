@@ -9,6 +9,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.OnStateChangedListener
 import com.davemorrissey.labs.subscaleview.decoder.SkiaPooledImageRegionDecoder
 import kotlin.math.ceil
 import kotlin.math.max
@@ -58,8 +59,20 @@ class PanelPageHolder(
     private var detectionJob: Job? = null
     private var pendingFocus: FocusRequest? = null
 
+    private val stateChangedListener = object : OnStateChangedListener {
+        override fun onScaleChanged(newScale: Float, origin: Int) {
+            overlay.invalidate()
+        }
+
+        override fun onCenterChanged(newCenter: PointF?, origin: Int) {
+            overlay.invalidate()
+        }
+    }
+
     init {
         overlay.overlayOpacity = panelSettings.enhancements.borderOpacity
+        overlay.attachTo(binding.ssiv)
+        binding.ssiv.setOnStateChangedListener(stateChangedListener)
     }
 
     override fun onStateChanged(state: PageState) {
@@ -74,11 +87,11 @@ class PanelPageHolder(
     override fun onReady() {
         super.onReady()
         pendingFocus?.let { focusState(it.state, it.animate) }
+        overlay.invalidate()
     }
 
     fun render(state: PanelReaderState, animate: Boolean) {
         overlay.isVisible = state.panels.isNotEmpty()
-        overlay.setContentBounds(state.contentWidth, state.contentHeight)
         overlay.setPanels(state.panels)
         overlay.highlight(state.currentIndex)
         focusState(state, animate)
@@ -109,7 +122,6 @@ class PanelPageHolder(
                     return@withContext
                 }
                 overlay.isVisible = true
-                overlay.setContentBounds(state.contentWidth, state.contentHeight)
                 overlay.setPanels(state.panels)
                 overlay.highlight(-1)
                 listener.onPanelStateReady(currentPage, state)
