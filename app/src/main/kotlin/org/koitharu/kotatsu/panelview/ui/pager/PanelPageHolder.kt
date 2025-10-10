@@ -1,3 +1,4 @@
+
 package org.koitharu.kotatsu.panelview.ui.pager
 
 import android.graphics.Bitmap
@@ -9,8 +10,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.OnStateChangedListener
 import com.davemorrissey.labs.subscaleview.decoder.SkiaPooledImageRegionDecoder
+import java.io.File
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -22,9 +23,9 @@ import kotlinx.coroutines.withContext
 import org.koitharu.kotatsu.core.exceptions.resolve.ExceptionResolver
 import org.koitharu.kotatsu.core.os.NetworkState
 import org.koitharu.kotatsu.databinding.ItemPageBinding
-import org.koitharu.kotatsu.panelview.PanelOrder
 import org.koitharu.kotatsu.panelview.PanelReaderState
-import org.koitharu.kotatsu.panelview.detection.PanelDetector
+import org.koitharu.kotatsu.panelview.detection.DetectionModeManager
+import org.koitharu.kotatsu.panelview.detection.PanelDetectorImpl
 import org.koitharu.kotatsu.panelview.overlay.PanelOverlayView
 import org.koitharu.kotatsu.panelview.settings.PanelViewSettings
 import org.koitharu.kotatsu.reader.domain.PageLoader
@@ -40,7 +41,7 @@ class PanelPageHolder(
     readerSettingsProducer: ReaderSettings.Producer,
     networkState: NetworkState,
     exceptionResolver: ExceptionResolver,
-    private val panelSettings: PanelViewSettings,
+    private var panelSettings: PanelViewSettings,
     private val listener: Listener,
 ) : PageHolder(
     owner = owner,
@@ -59,20 +60,24 @@ class PanelPageHolder(
     private var detectionJob: Job? = null
     private var pendingFocus: FocusRequest? = null
 
-    private val stateChangedListener = object : OnStateChangedListener {
-        override fun onScaleChanged(newScale: Float, origin: Int) {
-            overlay.invalidate()
-        }
-
-        override fun onCenterChanged(newCenter: PointF?, origin: Int) {
-            overlay.invalidate()
-        }
-    }
+    private lateinit var panelDetector: PanelDetectorImpl
 
     init {
+        setupDetector()
         overlay.overlayOpacity = panelSettings.enhancements.borderOpacity
         overlay.attachTo(binding.ssiv)
-        binding.ssiv.setOnStateChangedListener(stateChangedListener)
+    }
+
+    private fun setupDetector() {
+        val cacheDir = File(context.cacheDir, "panel_cache")
+        panelDetector = PanelDetectorImpl(cacheDir, DetectionModeManager)
+    }
+
+    fun updateSettings(newSettings: PanelViewSettings) {
+        panelSettings = newSettings
+        setupDetector() 
+        overlay.overlayOpacity = panelSettings.enhancements.borderOpacity
+        (binding.ssiv.tag as? PageState.Loaded)?.let { startDetection(it.source) }
     }
 
     override fun onStateChanged(state: PageState) {
@@ -91,9 +96,18 @@ class PanelPageHolder(
     }
 
     fun render(state: PanelReaderState, animate: Boolean) {
-        overlay.isVisible = state.panels.isNotEmpty()
-        overlay.setPanels(state.panels)
-        overlay.highlight(state.currentIndex)
+        if (!panelSettings.detection.enabled) {
+            overlay.isVisible = false
+            return
+        }
+
+        if (panelSettings.enhancements.overlayEnabled) {
+            overlay.isVisible = state.panels.isNotEmpty()
+            overlay.setPanels(state.panels)
+            overlay.highlight(state.currentIndex)
+        } else {
+            overlay.isVisible = false
+        }
         focusState(state, animate)
     }
 
@@ -121,9 +135,11 @@ class PanelPageHolder(
                 if (currentPage == null || currentPage.id != page.id || state == null) {
                     return@withContext
                 }
-                overlay.isVisible = true
-                overlay.setPanels(state.panels)
-                overlay.highlight(-1)
+                if (panelSettings.enhancements.overlayEnabled) {
+                    overlay.isVisible = true
+                    overlay.setPanels(state.panels)
+                    overlay.highlight(-1)
+                }
                 listener.onPanelStateReady(currentPage, state)
             }
         }
@@ -137,7 +153,7 @@ class PanelPageHolder(
             val bitmap = decoder.decodeRegion(Rect(0, 0, size.x, size.y), sampleSize)
             try {
                 ensureActive()
-                val rawPanels = PanelDetector.detectPanels(bitmap, panelSettings)
+                val rawPanels = panelDetector.detect(bitmap, panelSettings)
                 val scaleX = size.x / bitmap.width.toFloat()
                 val scaleY = size.y / bitmap.height.toFloat()
                 val scaledPanels = rawPanels.map { rect ->
@@ -148,9 +164,8 @@ class PanelPageHolder(
                         (rect.bottom * scaleY).roundToInt(),
                     )
                 }
-                val ordered = PanelOrder.order(scaledPanels, panelSettings.readingOrder)
-                val panels = ordered.takeIf { it.isNotEmpty() }
-                    ?: listOf(Rect(0, 0, size.x, size.y))
+                val panels = scaledPanels.takeIf { it.isNotEmpty() }
+                    ?: listOf(Rect(0, 0, size.x, size.y)) // Fallback to full page
                 PanelReaderState(size.x, size.y, panels)
             } finally {
                 bitmap.recycle()
@@ -173,22 +188,32 @@ class PanelPageHolder(
             return
         }
         pendingFocus = null
+
+        if (!panelSettings.enhancements.zoomEnabled) {
+            return
+        }
+
         val rect = state.currentPanel
         if (rect.width() <= 0 || rect.height() <= 0) {
             return
         }
+
+        val paddedRect = Rect(rect)
+        paddedRect.inset(-PANEL_PADDING, -PANEL_PADDING)
+
         ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CUSTOM
-        val widthScale = ssiv.width / rect.width().toFloat()
-        val heightScale = ssiv.height / rect.height().toFloat()
+        val widthScale = ssiv.width / paddedRect.width().toFloat()
+        val heightScale = ssiv.height / paddedRect.height().toFloat()
         val targetScale = if (panelSettings.enhancements.fitToWidth) {
             widthScale
         } else {
             max(widthScale, heightScale)
         }
         val scale = max(targetScale, MIN_SCALE)
-        val center = PointF(rect.centerX().toFloat(), rect.centerY().toFloat())
+        val center = PointF(paddedRect.centerX().toFloat(), paddedRect.centerY().toFloat())
+
         if (animate) {
-            ssiv.animateScaleAndCenter(scale, center)?.start()
+            ssiv.animateScaleAndCenter(scale, center)?.withDuration(300)?.start()
         } else {
             ssiv.setScaleAndCenter(scale, center)
         }
@@ -199,5 +224,6 @@ class PanelPageHolder(
     companion object {
         private const val MAX_BITMAP_SIDE = 2000f
         private const val MIN_SCALE = 0.01f
+        private const val PANEL_PADDING = 32
     }
 }

@@ -2,54 +2,52 @@ package org.koitharu.kotatsu.panelview.detection
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import kotlin.math.max
-import kotlin.math.min
-import org.koitharu.kotatsu.panelview.utils.DetectionMode
 
 object DetectionModeManager {
-    fun detectMode(bitmap: Bitmap): DetectionMode {
-        val width = bitmap.width
-        val height = bitmap.height
-        if (width == 0 || height == 0) {
-            return DetectionMode.AUTO
-        }
 
-        val aspectRatio = height.toFloat() / width.toFloat()
-        val avgSaturation = computeSaturation(bitmap)
+    private const val SATURATION_THRESHOLD = 0.1
+    private const val STRIP_ASPECT_RATIO_THRESHOLD = 2.0
+    private const val WEBTOON_ASPECT_RATIO_THRESHOLD = 0.5
+
+    fun detectMode(bitmap: Bitmap): DetectionMode {
+        val aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
 
         return when {
-            aspectRatio > 2.2f -> DetectionMode.WEBTOON
-            aspectRatio < 0.8f -> DetectionMode.STRIP
-            avgSaturation < 0.15 -> DetectionMode.MANGA
-            else -> DetectionMode.WESTERN
+            aspectRatio > STRIP_ASPECT_RATIO_THRESHOLD -> DetectionMode.STRIP
+            aspectRatio < WEBTOON_ASPECT_RATIO_THRESHOLD -> DetectionMode.WEBTOON
+            else -> {
+                val saturation = calculateAverageSaturation(bitmap)
+                if (saturation < SATURATION_THRESHOLD) {
+                    DetectionMode.MANGA
+                } else {
+                    DetectionMode.WESTERN
+                }
+            }
         }
     }
 
-    private fun computeSaturation(bitmap: Bitmap): Double {
+    private fun calculateAverageSaturation(bitmap: Bitmap): Float {
         val width = bitmap.width
         val height = bitmap.height
-        if (width == 0 || height == 0) {
-            return 0.0
-        }
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
 
+        var totalSaturation = 0f
         val hsv = FloatArray(3)
-        var sum = 0.0
-        var count = 0
-        val maxDimension = max(width, height)
-        val step = max(1, min(8, maxDimension / 256))
 
-        var y = 0
-        while (y < height) {
-            var x = 0
-            while (x < width) {
-                Color.colorToHSV(bitmap.getPixel(x, y), hsv)
-                sum += hsv[1].toDouble()
-                count++
-                x += step
-            }
-            y += step
+        for (pixel in pixels) {
+            Color.colorToHSV(pixel, hsv)
+            totalSaturation += hsv[1]
         }
 
-        return if (count == 0) 0.0 else sum / count
+        return totalSaturation / pixels.size
     }
+}
+
+enum class DetectionMode {
+    AUTO,
+    MANGA,
+    WESTERN,
+    STRIP,
+    WEBTOON,
 }

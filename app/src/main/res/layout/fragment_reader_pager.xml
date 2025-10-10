@@ -1,7 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.viewpager2.widget.ViewPager2
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:id="@+id/pager"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:defaultFocusHighlightEnabled="false" />
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/panel_quick_toggle_button"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="@string/panel_quick_toggle"
+        android:contentDescription="@string/panel_quick_toggle"
+        app:layout_constraintBottom_toBottomOf="@id/panel_settings_button"
+        app:layout_constraintEnd_toStartOf="@id/panel_settings_button"
+        app:layout_constraintTop_toTopOf="@id/panel_settings_button" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/panel_settings_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Panel Settings"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

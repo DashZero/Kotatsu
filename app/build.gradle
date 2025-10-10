@@ -1,10 +1,11 @@
+
 import java.time.LocalDateTime
 
 plugins {
 	id 'com.android.application'
 	id 'kotlin-android'
-	id 'com.google.devtools.ksp'
 	id 'kotlin-parcelize'
+	id 'com.google.devtools.ksp'
 	id 'dagger.hilt.android.plugin'
 	id 'androidx.room'
 	id 'org.jetbrains.kotlin.plugin.serialization'
@@ -115,6 +116,7 @@ android {
 	}
 }
 dependencies {
+	implementation project(':reader')
 	def parsersVersion = libs.versions.parsers.get()
 	if (System.properties.containsKey('parsersVersionOverride')) {
 		// usage:
@@ -163,6 +165,7 @@ dependencies {
 	implementation libs.okhttp.dnsoverhttps
 	implementation libs.okio
 	implementation libs.kotlinx.serialization.json
+	implementation 'com.google.code.gson:gson:2.10.1'
 
 	implementation libs.adapterdelegates
 	implementation libs.adapterdelegates.viewbinding

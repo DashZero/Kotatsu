@@ -1,3 +1,4 @@
+
 package org.koitharu.kotatsu.panelview.ui.pager
 
 import android.view.LayoutInflater

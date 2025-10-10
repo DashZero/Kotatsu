@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/panel_view_switch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/panel_settings_enable_panel_view" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/panel_settings_detection_mode" />
+
+    <RadioGroup
+        android:id="@+id/detection_mode_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/detection_mode_auto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto" />
+
+        <RadioButton
+            android:id="@+id/detection_mode_manga"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Manga" />
+
+        <RadioButton
+            android:id="@+id/detection_mode_western"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Western" />
+
+        <RadioButton
+            android:id="@+id/detection_mode_strip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Strip" />
+
+        <RadioButton
+            android:id="@+id/detection_mode_webtoon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Webtoon" />
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/panel_settings_reading_order" />
+
+    <RadioGroup
+        android:id="@+id/reading_order_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/reading_order_standard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/panel_settings_reading_order_standard" />
+
+        <RadioButton
+            android:id="@+id/reading_order_manga"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/panel_settings_reading_order_manga" />
+
+        <RadioButton
+            android:id="@+id/reading_order_four_koma"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/panel_settings_reading_order_four_koma" />
+    </RadioGroup>
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/overlay_switch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/panel_settings_overlay_toggle" />
+
+    <TextView
+        android:id="@+id/overlay_opacity_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/panel_settings_overlay_opacity_label" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/overlay_opacity_slider"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:valueFrom="0.0"
+        android:valueTo="1.0"
+        android:stepSize="0.05"
+        android:value="0.35" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/zoom_switch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/panel_settings_zoom_toggle" />
+
+</LinearLayout>

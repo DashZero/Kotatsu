@@ -23,9 +23,12 @@
 /tools
 /panelview
 /build
+/reader/build
 /captures
 .externalNativeBuild
 .cxx
+/reader/.cxx
+/reader/.gradle
 /.idea/deviceManager.xml
 /.kotlin/
 /.idea/AndroidProjectSystem.xml

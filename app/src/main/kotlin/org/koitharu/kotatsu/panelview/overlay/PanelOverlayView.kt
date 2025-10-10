@@ -5,6 +5,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.AttributeSet
@@ -26,8 +28,17 @@ class PanelOverlayView @JvmOverloads constructor(
     }
     private val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        color = Color.WHITE
-        strokeWidth = resources.displayMetrics.density * 1.5f
+        color = Color.rgb(255, 213, 79) // Amber
+        strokeWidth = resources.displayMetrics.density * 2f
+    }
+
+    private val dimPaint = Paint().apply {
+        color = Color.BLACK
+        alpha = 128
+    }
+
+    private val clearPaint = Paint().apply {
+        xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
     }
 
     private var imageView: SubsamplingScaleImageView? = null
@@ -39,10 +50,10 @@ class PanelOverlayView @JvmOverloads constructor(
     private val tmpPointBR = PointF()
 
     var overlayOpacity: Float
-        get() = overlayPaint.alpha / 255f
+        get() = dimPaint.alpha / 255f
         set(value) {
             val alpha = (value.coerceIn(0f, 1f) * 255).toInt()
-            overlayPaint.alpha = alpha
+            dimPaint.alpha = alpha
             invalidate()
         }
 
@@ -68,20 +79,29 @@ class PanelOverlayView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val ssiv = imageView ?: return
-        if (!ssiv.isReady || panels.isEmpty()) {
+        if (!ssiv.isReady || panels.isEmpty() || highlightedIndex == -1) {
             return
         }
-        panels.forEachIndexed { index, rect ->
-            if (!rect.isEmpty) {
-                val tl = ssiv.sourceToViewCoord(rect.left.toFloat(), rect.top.toFloat(), tmpPointTL)
-                val br = ssiv.sourceToViewCoord(rect.right.toFloat(), rect.bottom.toFloat(), tmpPointBR)
-                if (tl != null && br != null) {
-                    tmpRectF.set(tl.x, tl.y, br.x, br.y)
-                    val paint = if (index == highlightedIndex) highlightPaint else overlayPaint
-                    canvas.drawRect(tmpRectF, paint)
-                    canvas.drawRect(tmpRectF, borderPaint)
-                }
-            }
+
+        val highlightedRect = panels[highlightedIndex]
+        if (highlightedRect.isEmpty) {
+            return
+        }
+
+        val tl = ssiv.sourceToViewCoord(highlightedRect.left.toFloat(), highlightedRect.top.toFloat(), tmpPointTL)
+        val br = ssiv.sourceToViewCoord(highlightedRect.right.toFloat(), highlightedRect.bottom.toFloat(), tmpPointBR)
+
+        if (tl != null && br != null) {
+            tmpRectF.set(tl.x, tl.y, br.x, br.y)
+
+            // Draw a semi-transparent overlay over the entire view
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), dimPaint)
+
+            // Cut a hole in the overlay for the highlighted panel
+            canvas.drawRect(tmpRectF, clearPaint)
+
+            // Draw a border around the highlighted panel
+            canvas.drawRect(tmpRectF, borderPaint)
         }
     }
 }

@@ -28,5 +28,5 @@ dependencyResolutionManagement {
 	}
 }
 
-include ':app'
+include ':app', ':reader'
 rootProject.name = "Kotatsu"

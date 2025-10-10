@@ -1,86 +1,171 @@
 # Panel View Module
 
-This module owns panel-aware reading for Kotatsu, covering panel detection, reading order, and navigation. The core goal is *modularity*: each detector is isolated, settings describe behavior, and UI hooks depend only on stable state and ordering classes.
+Modern panel-aware reading inside Kotatsu lives in the `panelview/` package. The feature is designed for portability: each detector is a self‑contained strategy, settings capture user intent, and the UI consumes only immutable state plus stable navigation helpers.
 
 ## Directory Map
 
-- app/src/main/kotlin/org/kotatsu/panelview/ : public API surface for the reader
-  - PanelDetector.kt : orchestrates panel detection pipelines and inline refinement
-  - detection/ : pluggable detectors (SimpleGutterDetector, OpenCVPanelDetector, DeepPanelDetector, HuggingFaceDetector)
-  - settings/ : PanelViewSettings DTOs and enums describing scan type, frame options, reading order
-  - PanelOrder.kt : sorting logic per reading order
-  - PanelReaderController.kt : navigation state machine with paging callbacks
-  - PanelReaderState.kt : immutable state backing the controller
-  - PanelReaderScreen.kt : placeholder for future Compose UI; keep non-Compose flow decoupled
+- `app/src/main/kotlin/org/koitharu/kotatsu/panelview/`
+  - `PanelDetector.kt` (thin orchestration interface kept for compatibility)
+  - `PanelOrder.kt` final ordering utility shared by adapters and detectors
+  - `PanelReaderController.kt` / `PanelReaderState.kt` navigation state & cursor logic
+  - `settings/` parcelable DTOs (`PanelViewSettings`, `PanelDetectionOptions`, `PanelEnhancementOptions`, `PanelReadingOrder`)
+  - `detection/`
+    - `PanelDetectionConstants.kt` research-backed thresholds used globally
+    - `PanelDetectorImpl.kt` caching + post-processing coordinator
+    - `MangaDetector.kt`, `WesternDetector.kt`, `StripDetector.kt`, `WebtoonDetector.kt` dedicated style strategies
+  - `ui/` panel-ready reader integration (`PanelReaderFragment`, `PanelPageHolder`, settings sheet)
 
-Keep panel-reader specific assets, configs, and docs in this tree so the feature can move into its own Gradle module later.
+The tree is intentionally self-contained so the module can graduate into its own Gradle project later.
 
-## Detection Workflow
+## Detection Pipeline
 
-`PanelDetector.detectPanels(bitmap, settings)` is the single entry point. It is marked `suspend` so heavy detectors can hop to background dispatchers.
+`PanelDetectorImpl.detect(bitmap, settings)` is the only place that performs detection. The flow:
 
-1. Skip detection when `settings.detection.enabled` is false and return the full page.
-2. Choose the base pipeline from `settings.scanType`:
-   - `REGULAR` -> `runRegularPipeline`: `OpenCVPanelDetector` -> `SimpleGutterDetector` -> `DeepPanelDetector`.
-   - `IRREGULAR` -> `runIrregularPipeline`: prefer `SimpleGutterDetector`, fall back to OpenCV, then Deep.
-   - `FOUR_QUADRANTS` -> deterministic 2x2 split.
-   - `WEBTOON` -> `webtoonSlices`, adaptive vertical slicing by aspect ratio.
-3. If regular detection yields 1 or fewer panels and `autoSwitchIrregular` is enabled, retry the irregular pipeline.
-4. If smart splitting is enabled, run `refineInlinePanels`:
-   - Trim whitespace around each candidate rect.
-   - Spawn crop bitmaps and rerun `SimpleGutterDetector`, `OpenCVPanelDetector`, and the projection-based splitter (`detectInlineByProjection`).
-   - Merge overlapping child rects, enforce `MIN_PANEL_SIZE`, and keep significant subdivisions.
-   - As a last resort, generate grid-based `inlineFallback` panels tailored to the scan type.
-5. Guarantee at least one panel (full page) to avoid empty results.
+1. **Short-circuit** when `PanelViewSettings.detection.enabled` is `false` → return a single full-page rect `(0,0,w,h)`.
+2. **Mode resolution**
+   - Manual overrides come from `settings.detection.detectionMode`.
+   - `AUTO` delegates to `DetectionModeManager.detectMode`, which classifies using aspect ratio thresholds and average saturation.
+3. **Per-style detector**
+   - Map of detectors: `MANGA`, `WESTERN`, `STRIP`, `WEBTOON` (defaults to Manga when unknown).
+   - Each detector returns bitmap-space `Rect`s and never mutates the source.
+4. **Post-processing** (shared for all styles, see constants below)
+   - Clamp panel coordinates to the image bounds.
+   - Filter out rectangles that violate *any* threshold:
+     - Minimum panel dimension ≥ **40 px** (width and height)
+     - Minimum panel area ≥ **5 %** of the page `(width*height*0.05)`
+     - (When contour data available) rectangularity >= **0.75**.
+   - Merge overlapping rectangles when overlap fraction (intersection area ÷ smaller rect area) ≥ **0.15**.
+   - Ensure at least one rect; fallback is the entire page.
+   - Sort results using `PanelSorter` (style-specific strategy) followed by `PanelOrder.order` (reading order aware).
+5. **Caching**
+   - Results are stored under `<cacheDir>/panel_cache/` keyed by bitmap hash, reading order, detection mode, and `CACHE_VERSION`.
+   - Cache files are JSON lists (`Gson`) of `Rect` values.
 
-Detectors must return display-space `Rect` values relative to the original bitmap. New detectors must not mutate the source `Bitmap` and should degrade gracefully by returning an empty list.
+The implementation is fully deterministic: identical bitmap + settings produce identical rectangles.
 
-## Detectors
+## Detection Strategies
 
-- `SimpleGutterDetector` : pure Kotlin; downscales, derives luminance histograms, finds high-white gutters, emits axis-aligned panels.
-- `OpenCVPanelDetector` : requires OpenCV; uses contour detection, morphological ops, and optional gutter-based fallback; merges overlaps aggressively.
-- `DeepPanelDetector` : coroutine placeholder for ML-based detection (currently returns empty until a model is wired in).
-- `HuggingFaceDetector` : stub for future on-device TFLite models converted from HuggingFace.
+All detectors operate in OpenCV on a background dispatcher (`Dispatchers.Default` / `Dispatchers.IO` inside `PanelPageHolder`).
 
-When adding a detector:
+### MangaDetector
+| Step | Details |
+| --- | --- |
+| Pre-process | Convert to HSV to estimate saturation. |
+| Branch | Saturation `< 20` → grayscale + **Otsu** threshold; otherwise grayscale + **adaptive Gaussian** thresholding. |
+| Contours | `RETR_TREE` + `CHAIN_APPROX_SIMPLE`, inspect only top-level contours (parent = -1). |
+| Filters | Rectangularity ≥ **0.75**, area ≥ 5 %, width & height ≥ 40 px. |
+| Output | Sorted by `top` then `left`; fallback to full page if empty. |
 
-- Implement a standalone object in `detection/`.
-- Keep dependencies scoped (native libs should be optional and gated like OpenCV).
-- Return `List<Rect>` in bitmap coordinates and document expected bitmap preconditions (size, color space, etc.).
-- Register it inside `PanelDetector` in the appropriate pipeline branch.
+This covers both B&W and colour manga without a second detector.
 
-## Settings Contract
+### WesternDetector
+| Step | Details |
+| --- | --- |
+| Canny | Thresholds **50 / 150** on the grayscale page. |
+| Morphology | `MORPH_CLOSE` + `dilate` using a **3 × 3** kernel. |
+| Contours | `RETR_EXTERNAL`, convert to bounding rects. |
+| Filters | Same 40 px / 5 % / 0.75 rectangularity filters. |
+| Output | Passes raw rects to post-processing for merging; fallback to full page if empty. |
 
-`PanelViewSettings` groups feature toggles so callers can choose the reading experience:
+### StripDetector
+- Deterministic equal-width slicing.
+- Choose panel count by aspect ratio: `<3.0` → 3 panels, `3.0–3.8` → 4, `>=3.8` → 5.
+- Rectangles span `0..height`.
 
-- `PanelDetectionOptions` : toggle panel view mode and smart splitting.
-- `PanelScanType` : selects the primary pipeline (regular, irregular, quadrants, webtoon).
-- `PanelEnhancementOptions` : currently used for auto-switching and display adjustments; extend cautiously.
-- `PanelReadingOrder` : consumed by `PanelOrder` to sort rectangles (standard left-to-right, manga right-to-left, four-koma vertical strips).
+### WebtoonDetector
+| Step | Details |
+| --- | --- |
+| Pre-process | Grayscale + Gaussian blur (`3 × 3` kernel). |
+| Threshold | Otsu binary inversion. |
+| Projection | Reduce the binary image vertically to a single column sum. |
+| Gap detection | Row density < **10 %** of full black → candidate gap; require consecutive gap height ≥ **20 px**. |
+| Slice | Full-width panel between gaps; last panel extends to page bottom. |
 
-Keep new flags additive and avoid coupling UI state or business logic back into detectors.
+## Post-processing & Ordering
 
-## Navigation Layer
+- Constants live in `PanelDetectionConstants`.
+- `PanelSorter.sortPanels(panels, mode)` chooses per-style ordering:
+  - Manga: top-to-bottom, right-to-left inside row.
+  - Western: top-to-bottom, left-to-right.
+  - Strip: left-to-right (single row).
+  - Webtoon: top-to-bottom.
+- `PanelOrder.order(panels, readingOrder)` reorders for user-selected reading order (`STANDARD`, `MANGA`, `FOUR_KOMA`) using row clustering with a **35 %** vertical overlap tolerance.
+- Final list is consumed by `PanelReaderController` and the overlay renderer.
 
-- `PanelReaderState` stores the bitmap, detected panels, and active index.
-- `PanelReaderController` advances or rewinds panels and can request the next or previous page through injected callbacks. This keeps paging out of UI code and makes the controller reusable across views.
-- `PanelReaderScreen` is a placeholder; the actual UI integration lives in a fragment using `SubsamplingScaleImageView`. A future Compose implementation should continue to depend only on `PanelReaderState` and `PanelReaderController`.
+## Settings & UI Surface
 
-## Modularity Roadmap
+`PanelViewSettings` (parcelable):
+```kotlin
+PanelViewSettings(
+    detection = PanelDetectionOptions(
+        enabled = Boolean,
+        smartSplitting = Boolean, // reserved
+        detectionMode = DetectionMode
+    ),
+    readingOrder = PanelReadingOrder,
+    enhancements = PanelEnhancementOptions(
+        autoSwitchIrregular = Boolean, // reserved
+        fitToWidth = Boolean,
+        panBound = Boolean,
+        overlayEnabled = Boolean,
+        zoomEnabled = Boolean,
+        borderOpacity = Float // 0.0 – 1.0
+    ),
+)
+```
 
-To spin this into a dedicated Gradle module later:
+User controls:
+- **Quick toggle button** in `fragment_reader_pager.xml`: popup menu to enable/disable detection, switch detection mode, or change reading order on the fly.
+- **Panel Settings bottom sheet**:
+  1. Enable / disable panel view
+  2. Manual detection mode (Auto, Manga, Western, Strip, Webtoon)
+  3. Reading order (Western, Manga, Four-koma)
+  4. Overlay toggle + opacity slider (0 % – 100 % in 5 % steps; persisted to `borderOpacity`)
+  5. Auto-zoom toggle
 
-- Keep detector dependencies isolated (OpenCV via optional build flavor, ML kits behind interfaces).
-- Move shared contracts (`PanelViewSettings`, `PanelReaderState`, `PanelOrder`) into an `api` package first.
-- Provide DI-friendly factories so Android-specific context (for example asset loading) stays outside core logic.
-- Add instrumented or unit tests per detector once fixtures are ready; store them under `app/src/test/.../panelview/` to ease relocation.
-- Update this README whenever the pipeline order or settings contract changes; it should be the source for AI or automation briefings.
+Changes propagate via `PanelReaderFragment.onSettingsChanged`, purge cached panels when mode/order flips, and update the overlay behaviour immediately.
+
+## Navigation & Zoom
+
+- `PanelReaderController` caches up to **12** recent page states (`MAX_CACHED_PAGES`) for quick backtracking.
+- `PanelPageHolder` handles detection off the UI thread, caches states per page, and triggers `PanelReaderController` updates.
+- Zoom transitions (`PanelPageHolder.focusState`) animate with `SubsamplingScaleImageView.animateScaleAndCenter` at **300 ms**, padding panel rects by **32 px** so panels fill the screen without harsh edges. Zoom is skipped when user disables auto zoom.
+- Overlay rendering lives in `PanelOverlayView`: dim background, highlight border thickness `2dp`, opacity controlled by settings.
 
 ## Integration Notes
 
-- Added `ReaderMode.PANEL` and wired `ReaderManager` to use `PanelReaderFragment`.
-- Extended reader config UI (`sheet_reader_config.xml`, `ReaderConfigSheet.kt`) with a panel toggle.
-- Added OpenCV dependency in `app/build.gradle` for detector pipeline.
-- Registered the panel mode label in `values/arrays.xml` and `values/strings.xml`.
+- `PanelReaderFragment` replaces the reader pager layout with standard `ViewPager2` (`fragment_reader_pager.xml`).
+- Quick toggle button text reflects detection state using `panel_quick_toggle_label_pattern`.
+- Build depends on OpenCV via existing Gradle setup; no other native libs required.
+- All panel-specific classes reside under `panelview/`; consuming code interacts only through `PanelReaderFragment` or the settings DTOs, preserving modularity.
 
-- Augmented `res/layout/item_page.xml` to host the panel overlay view.
+## AI Agent Quick Reference
+
+Use this section when handing work to another automation agent:
+
+### Core Kotlin entry points
+- `app/src/main/kotlin/org/koitharu/kotatsu/panelview/detection/PanelDetectorImpl.kt` — detection coordinator, cache, post-processing constants.
+- `app/src/main/kotlin/org/koitharu/kotatsu/panelview/detection/MangaDetector.kt` / `WesternDetector.kt` / `StripDetector.kt` / `WebtoonDetector.kt` — style-specific pipelines.
+- `app/src/main/kotlin/org/koitharu/kotatsu/panelview/detection/DetectionModeManager.kt` — AUTO mode heuristics.
+- `app/src/main/kotlin/org/koitharu/kotatsu/panelview/ui/pager/PanelReaderFragment.kt` — hooks panel mode into the reader UI, handles quick toggle menu.
+- `app/src/main/kotlin/org/koitharu/kotatsu/panelview/ui/pager/PanelPageHolder.kt` — runs detection, manages zoom/overlay, feeds `PanelReaderController`.
+- `app/src/main/kotlin/org/koitharu/kotatsu/panelview/ui/settings/PanelSettingsBottomSheet.kt` — settings sheet wiring.
+
+### Key resources
+- `app/src/main/res/layout/fragment_reader_pager.xml` — pager container; quick toggle button lives here.
+- `app/src/main/res/layout/bottom_sheet_panel_settings.xml` — settings bottom sheet layout.
+- `app/src/main/res/values/strings.xml` — panel strings share prefix `panel_…`.
+- `app/src/main/res/layout/item_page.xml` — hosts `PanelOverlayView` (ensure overlay ids line up with `PanelPageHolder`).
+
+### Supporting contracts
+- `PanelDetectionConstants.kt` — authoritative numeric thresholds (40 px, 5 %, 0.75, 15 %, etc.).
+- `PanelViewSettings.kt` — parcelable state passed between fragments/viewmodels.
+- `PanelOrder.kt` & `PanelSorter.kt` — final ordering logic; adjust when adding new reading orders.
+- Cache path: `<cacheDir>/panel_cache/` (JSON rectangles).
+
+### External touchpoints
+- Reader config UI: `app/src/main/kotlin/org/koitharu/kotatsu/reader/ui/config/ReaderConfigSheet.kt` (toggle) if new options are exposed.
+- Build config: `app/build.gradle` for OpenCV dependency updates.
+- Tests (future): place fixtures under `app/src/test/.../panelview/`.
+
+Keep this document in sync whenever constants, detectors, or UI contracts change—it is the canonical spec for automation and future module extraction.

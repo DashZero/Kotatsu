@@ -880,4 +880,26 @@
 	<string name="no_chapters_in_manga">This manga does not contain any chapters</string>
 	<string name="chapters_load_failed">Failed to load chapter list</string>
 	<string name="telegram_integration">Telegram integration</string>
+	<!-- For Panel View -->
+	<string name="panel_quick_toggle">Panel quick switch</string>
+	<string name="panel_settings_enable_panel_view">Enable panel view</string>
+	<string name="panel_settings_detection_mode">Detection mode</string>
+	<string name="panel_settings_reading_order">Reading order</string>
+	<string name="panel_settings_reading_order_standard">Western</string>
+	<string name="panel_settings_reading_order_manga">Manga</string>
+	<string name="panel_settings_reading_order_four_koma">Four-koma</string>
+	<string name="panel_settings_overlay_toggle">Show overlay</string>
+	<string name="panel_settings_overlay_opacity_label">Overlay opacity</string>
+	<string name="panel_settings_overlay_opacity_value">Overlay opacity: %1$d%%</string>
+	<string name="panel_settings_zoom_toggle">Auto zoom panels</string>
+	<string name="panel_detection_mode_auto">Auto</string>
+	<string name="panel_detection_mode_manga">Manga</string>
+	<string name="panel_detection_mode_western">Western</string>
+	<string name="panel_detection_mode_strip">Strip</string>
+	<string name="panel_detection_mode_webtoon">Webtoon</string>
+	<string name="panel_quick_toggle_label_pattern">%1$s · %2$s</string>
+	<string name="panel_quick_toggle_disabled">Panel view off</string>
+	<string name="panel_quick_toggle_enable">Enable panel view</string>
+	<string name="panel_quick_toggle_disable">Disable panel view</string>
+	<!-- For Panel View -->
 </resources>

@@ -1,6 +1,7 @@
 package org.koitharu.kotatsu.panelview.utils
 
 import android.graphics.Rect
+import org.koitharu.kotatsu.panelview.detection.DetectionMode
 
 object PanelSorter {
     fun sortPanels(panels: List<Rect>, mode: DetectionMode): List<Rect> {
