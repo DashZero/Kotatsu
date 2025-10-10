@@ -11,6 +11,14 @@
 		app:actionViewClass="androidx.appcompat.widget.SearchView"
 		app:showAsAction="ifRoom|collapseActionView" />
 
+	<!-- ANILIST REVIEW -->
+	<item
+		android:id="@+id/action_reviews"
+		android:icon="@drawable/ic_reviews"
+		android:orderInCategory="12"
+		android:title="@string/reviews_title"
+		app:showAsAction="ifRoom" />
+
 	<item
 		android:id="@+id/action_downloaded"
 		android:checkable="true"

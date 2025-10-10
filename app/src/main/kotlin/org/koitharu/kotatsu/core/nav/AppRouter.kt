@@ -106,6 +106,9 @@ import org.koitharu.kotatsu.settings.tracker.categories.TrackerCategoriesConfigS
 import org.koitharu.kotatsu.stats.ui.StatsActivity
 import org.koitharu.kotatsu.stats.ui.sheet.MangaStatsSheet
 import org.koitharu.kotatsu.suggestions.ui.SuggestionsActivity
+import org.koitharu.kotatsu.reviews.ARG_MANGA_ID
+import org.koitharu.kotatsu.reviews.ARG_MANGA_TITLE
+import org.koitharu.kotatsu.reviews.ReviewsSheet
 import org.koitharu.kotatsu.tracker.ui.updates.UpdatesActivity
 import java.io.File
 import androidx.appcompat.R as appcompatR
@@ -514,6 +517,13 @@ class AppRouter private constructor(
 		}.showDistinct()
 	}
 
+		fun showReviews(manga: Manga) {
+			ReviewsSheet().withArgs(2) {
+				putLong(ARG_MANGA_ID, manga.id)
+				putString(ARG_MANGA_TITLE, manga.title)
+			}.showDistinct()
+	}
+
 	fun showScrobblingSelectorSheet(manga: Manga, scrobblerService: ScrobblerService?) {
 		ScrobblingSelectorSheet().withArgs(2) {
 			putParcelable(KEY_MANGA, ParcelableManga(manga))
@@ -689,10 +699,13 @@ class AppRouter private constructor(
 
 		fun detailsIntent(context: Context, manga: Manga) = Intent(context, DetailsActivity::class.java)
 			.putExtra(KEY_MANGA, ParcelableManga(manga))
+			.putExtra(ARG_MANGA_ID, manga.id)
+			.putExtra(ARG_MANGA_TITLE, manga.title)
 			.setData(shortMangaUrl(manga.id))
 
 		fun detailsIntent(context: Context, mangaId: Long) = Intent(context, DetailsActivity::class.java)
 			.putExtra(KEY_ID, mangaId)
+			.putExtra(ARG_MANGA_ID, mangaId)
 			.setData(shortMangaUrl(mangaId))
 
 		fun listIntent(context: Context, source: MangaSource, filter: MangaListFilter?, sortOrder: SortOrder?): Intent =

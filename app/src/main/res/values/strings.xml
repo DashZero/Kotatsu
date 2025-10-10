@@ -879,4 +879,28 @@
 	<string name="no_chapters_in_manga">This manga does not contain any chapters</string>
 	<string name="chapters_load_failed">Failed to load chapter list</string>
 	<string name="telegram_integration">Telegram integration</string>
+	<!-- ANILIST REVIEW -->
+	<string name="reviews_title">Reviews</string>
+	<string name="review_track_required">You must sign in to AniList and track this manga first before viewing or writing reviews.</string>
+	<string name="review_sign_in_required">You must sign in to AniList before viewing or writing reviews.</string>
+	<string name="reviews_empty">No reviews yet. Be the first to share your thoughts!</string>
+	<string name="review_write">Write review</string>
+	<string name="review_edit">Edit review</string>
+	<string name="review_delete">Delete review</string>
+	<string name="review_delete_confirm">Delete review?</string>
+	<string name="review_delete_confirm_message">This will remove your AniList review for this manga.</string>
+	<string name="review_saved">Review saved</string>
+	<string name="review_deleted">Review deleted</string>
+	<string name="review_rate_limited">AniList is throttling requests. Please try again shortly.</string>
+	<string name="review_summary_hint">Summary</string>
+	<string name="review_summary_helper">Keep it short and spoiler-free.</string>
+	<string name="review_body_hint">Share your detailed thoughts (Markdown supported)</string>
+	<string name="review_body_helper">Supports Markdown formatting.</string>
+	<string name="review_score_label">Score</string>
+	<string name="review_score_format">Score: %1$d / 100</string>
+	<string name="review_preview_markdown">Preview Markdown</string>
+	<string name="review_preview_error">Failed to render preview</string>
+	<string name="review_markdown_loading">Rendering preview...</string>
+	<string name="review_validation_summary">Summary must be at least %1$d characters.</string>
+	<string name="review_validation_body">Review body must be at least %1$d characters.</string>
 </resources>

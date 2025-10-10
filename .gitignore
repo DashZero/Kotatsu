@@ -27,3 +27,52 @@
 /.idea/deviceManager.xml
 /.kotlin/
 /.idea/AndroidProjectSystem.xml
+
+# Built application files
+reader/build/
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
+# Proguard folder
+proguard/
+
+# Log Files
+*.log
+
+# Navigation editor
+.navigation/
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services
+# google-services.json
+
+# Lint
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+# lint/reports/
+
+# Android Profiling
+*.hprof
+
+# NDK
+obj/
+
+# Output JSON files
+output.json
+output-metadata.json

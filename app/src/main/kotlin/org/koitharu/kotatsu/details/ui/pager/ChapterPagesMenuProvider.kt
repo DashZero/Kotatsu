@@ -11,6 +11,7 @@ import com.google.android.material.slider.LabelFormatter
 import com.google.android.material.slider.Slider
 import com.google.android.material.slider.TickVisibilityMode
 import org.koitharu.kotatsu.R
+import org.koitharu.kotatsu.core.nav.router
 import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.core.ui.sheet.BaseAdaptiveSheet
 import org.koitharu.kotatsu.core.util.ext.setValueRounded
@@ -71,6 +72,12 @@ class ChapterPagesMenuProvider(
 
 		R.id.action_downloaded -> {
 			viewModel.isDownloadedOnly.value = !menuItem.isChecked
+			true
+		}
+
+		R.id.action_reviews -> {
+			val manga = viewModel.getMangaOrNull() ?: return false
+			sheet.router.showReviews(manga)
 			true
 		}
 

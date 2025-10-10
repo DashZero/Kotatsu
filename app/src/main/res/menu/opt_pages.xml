@@ -11,4 +11,12 @@
 		app:actionViewClass="com.google.android.material.slider.Slider"
 		app:showAsAction="ifRoom|collapseActionView" />
 
+	<!-- ANILIST REVIEW -->
+	<item
+		android:id="@+id/action_reviews"
+		android:icon="@drawable/ic_reviews"
+		android:orderInCategory="15"
+		android:title="@string/reviews_title"
+		app:showAsAction="ifRoom" />
+
 </menu>

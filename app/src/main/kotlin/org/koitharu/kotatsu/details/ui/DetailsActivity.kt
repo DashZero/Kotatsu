@@ -20,6 +20,10 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.core.view.updatePaddingRelative
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.transition.TransitionManager
 import coil3.ImageLoader
@@ -32,6 +36,8 @@ import coil3.size.Precision
 import coil3.transform.RoundedCornersTransformation
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.chip.Chip
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
@@ -39,6 +45,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.bookmarks.domain.Bookmark
 import org.koitharu.kotatsu.core.image.CoilMemoryCacheKey
@@ -76,6 +83,7 @@ import org.koitharu.kotatsu.core.util.ext.isAnimationsEnabled
 import org.koitharu.kotatsu.core.util.ext.isTextTruncated
 import org.koitharu.kotatsu.core.util.ext.joinToStringWithLimit
 import org.koitharu.kotatsu.core.util.ext.mangaSourceExtra
+import org.koitharu.kotatsu.core.exceptions.resolve.SnackbarErrorObserver
 import org.koitharu.kotatsu.core.util.ext.observe
 import org.koitharu.kotatsu.core.util.ext.observeEvent
 import org.koitharu.kotatsu.core.util.ext.parentView
@@ -106,6 +114,11 @@ import org.koitharu.kotatsu.parsers.model.MangaTag
 import org.koitharu.kotatsu.parsers.util.ifNullOrEmpty
 import org.koitharu.kotatsu.parsers.util.nullIfEmpty
 import org.koitharu.kotatsu.parsers.util.toTitleCase
+import org.koitharu.kotatsu.reviews.ReviewListAdapter
+import org.koitharu.kotatsu.reviews.ReviewMessage
+import org.koitharu.kotatsu.reviews.ReviewUiState
+import org.koitharu.kotatsu.reviews.ReviewViewModel
+import org.koitharu.kotatsu.reviews.showReviewEditorDialog
 import org.koitharu.kotatsu.scrobbling.common.domain.model.ScrobblingInfo
 import javax.inject.Inject
 import kotlin.math.roundToInt
@@ -133,6 +146,10 @@ class DetailsActivity :
 	lateinit var settings: AppSettings
 
 	private val viewModel: DetailsViewModel by viewModels()
+	private val reviewViewModel: ReviewViewModel by viewModels()
+	private val reviewsAdapter = ReviewListAdapter()
+	private var reviewState: ReviewUiState? = null
+	private var isReviewLoading = false
 	private lateinit var menuProvider: DetailsMenuProvider
 	private lateinit var infoBinding: LayoutDetailsTableBinding
 
@@ -171,6 +188,8 @@ class DetailsActivity :
 				DetailsBottomSheetCallback(viewBinding.swipeRefreshLayout, checkNotNull(viewBinding.navbarDim)),
 			)
 		}
+
+		setupReviewsSection()
 
 		val appRouter = router
 		viewModel.mangaDetails.filterNotNull().observe(this, ::onMangaUpdated)
@@ -298,6 +317,7 @@ class DetailsActivity :
 
 	override fun onRefresh() {
 		viewModel.reload()
+		reviewViewModel.reload(force = true)
 	}
 
 	override fun onDraw() {
@@ -394,6 +414,158 @@ class DetailsActivity :
 			).also { rv.adapter = it }
 		adapter.items = related
 		viewBinding.groupRelated.isVisible = true
+	}
+
+	private fun setupReviewsSection() {
+		with(viewBinding) {
+			recyclerViewReviews.layoutManager = LinearLayoutManager(this@DetailsActivity)
+			recyclerViewReviews.adapter = reviewsAdapter
+			buttonReviewsWrite.setOnClickListener {
+				val state = reviewState as? ReviewUiState.Content ?: return@setOnClickListener
+				showReviewEditorDialog(
+					context = this@DetailsActivity,
+					scope = lifecycleScope,
+					layoutInflater = layoutInflater,
+					existing = state.myReview,
+					renderMarkdown = { markdown: String -> reviewViewModel.renderMarkdown(markdown) },
+					onSubmit = { summary, body, score -> reviewViewModel.submitReview(summary, body, score) },
+				)
+			}
+			buttonReviewsDelete.setOnClickListener {
+				showReviewDeleteConfirmation()
+			}
+		}
+		reviewViewModel.onError.observeEvent(this, SnackbarErrorObserver(viewBinding.scrollView, null))
+		lifecycleScope.launch {
+			repeatOnLifecycle(Lifecycle.State.STARTED) {
+				launch {
+					reviewViewModel.state.collect { renderReviewState(it) }
+				}
+				launch {
+					reviewViewModel.isLoading.collect { renderReviewLoading(it) }
+				}
+			}
+		}
+		reviewViewModel.messages.observeEvent(this, ::handleReviewMessage)
+		viewBinding.scrollView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+			if (scrollY > oldScrollY) {
+				maybeLoadMoreReviews()
+			}
+		}
+	}
+
+	private fun renderReviewState(state: ReviewUiState) = with(viewBinding) {
+		reviewState = state
+		groupReviews.isVisible = true
+		dividerReviews.isVisible = true
+		textViewReviewsTitle.isVisible = true
+		when (state) {
+			ReviewUiState.Loading -> {
+				textViewReviewsMessage.isVisible = false
+				textViewReviewsMessage.text = null
+				recyclerViewReviews.isVisible = false
+				buttonReviewsWrite.isVisible = false
+				buttonReviewsDelete.isVisible = false
+				reviewsAdapter.viewerId = null
+				reviewsAdapter.submitList(emptyList())
+			}
+
+			ReviewUiState.NotAuthorized -> {
+				textViewReviewsMessage.isVisible = true
+				textViewReviewsMessage.setText(R.string.review_sign_in_required)
+				recyclerViewReviews.isVisible = false
+				buttonReviewsWrite.isVisible = false
+				buttonReviewsDelete.isVisible = false
+				reviewsAdapter.viewerId = null
+				reviewsAdapter.submitList(emptyList())
+			}
+
+			ReviewUiState.NotTracked -> {
+				textViewReviewsMessage.isVisible = true
+				textViewReviewsMessage.setText(R.string.review_track_required)
+				recyclerViewReviews.isVisible = false
+				buttonReviewsWrite.isVisible = false
+				buttonReviewsDelete.isVisible = false
+				reviewsAdapter.viewerId = null
+				reviewsAdapter.submitList(emptyList())
+			}
+
+			is ReviewUiState.Content -> {
+				reviewsAdapter.viewerId = state.viewer?.id
+				reviewsAdapter.submitList(state.reviews)
+				val hasReviews = state.reviews.isNotEmpty()
+				recyclerViewReviews.isVisible = hasReviews
+				textViewReviewsMessage.isVisible = !hasReviews
+				if (hasReviews) {
+					textViewReviewsMessage.text = null
+				} else {
+					textViewReviewsMessage.setText(R.string.reviews_empty)
+				}
+				buttonReviewsWrite.isVisible = true
+				buttonReviewsWrite.setText(if (state.myReview != null) R.string.review_edit else R.string.review_write)
+				buttonReviewsDelete.isVisible = state.myReview != null
+				if (state.hasNext) {
+					maybeLoadMoreReviews()
+				}
+			}
+		}
+		updateReviewProgress()
+	}
+
+	private fun renderReviewLoading(isLoading: Boolean) {
+		isReviewLoading = isLoading
+		updateReviewProgress()
+	}
+
+	private fun updateReviewProgress() {
+		val currentState = reviewState
+		val loadingMore = (currentState as? ReviewUiState.Content)?.isLoadingMore == true
+		viewBinding.progressReviews.isVisible = (isReviewLoading || loadingMore) && viewBinding.groupReviews.isVisible
+	}
+
+	private fun handleReviewMessage(message: ReviewMessage) {
+		val anchor = viewBinding.scrollView
+		when (message) {
+			is ReviewMessage.Resource -> Snackbar
+				.make(anchor, getString(message.resId, *message.formatArgs), Snackbar.LENGTH_SHORT)
+				.show()
+
+			is ReviewMessage.Plain -> Snackbar
+				.make(anchor, message.value, Snackbar.LENGTH_SHORT)
+				.show()
+		}
+	}
+
+	private fun showReviewDeleteConfirmation() {
+		val state = reviewState as? ReviewUiState.Content ?: return
+		if (state.myReview == null) {
+			return
+		}
+		MaterialAlertDialogBuilder(this)
+			.setTitle(R.string.review_delete_confirm)
+			.setMessage(R.string.review_delete_confirm_message)
+			.setNegativeButton(android.R.string.cancel, null)
+			.setPositiveButton(R.string.review_delete) { _, _ ->
+				reviewViewModel.deleteReview()
+			}
+			.show()
+	}
+
+	private fun maybeLoadMoreReviews() {
+		val state = reviewState as? ReviewUiState.Content ?: return
+		if (!state.hasNext || state.isLoadingMore) {
+			return
+		}
+		val recycler = viewBinding.recyclerViewReviews
+		if (!recycler.isVisible) {
+			return
+		}
+		val scrollView = viewBinding.scrollView
+		val distanceToBottom = recycler.bottom - (scrollView.scrollY + scrollView.height)
+		val threshold = resources.getDimensionPixelOffset(R.dimen.list_spacing_large)
+		if (distanceToBottom <= threshold) {
+			reviewViewModel.loadMore()
+		}
 	}
 
 	private fun onLoadingStateChanged(isLoading: Boolean) {
