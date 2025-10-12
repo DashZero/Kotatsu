@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Detection Mode" />
+
+    <RadioGroup
+        android:id="@+id/detection_mode_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/detection_mode_auto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto" />
+
+        <RadioButton
+            android:id="@+id/detection_mode_manga"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Manga" />
+
+        <RadioButton
+            android:id="@+id/detection_mode_western"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Western" />
+
+        <RadioButton
+            android:id="@+id/detection_mode_strip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Strip" />
+
+        <RadioButton
+            android:id="@+id/detection_mode_webtoon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Webtoon" />
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Reading Order" />
+
+    <RadioGroup
+        android:id="@+id/reading_order_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/reading_order_standard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Standard" />
+
+        <RadioButton
+            android:id="@+id/reading_order_manga"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Manga" />
+    </RadioGroup>
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/overlay_switch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Show Overlay" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/zoom_switch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enable Zoom" />
+
+</LinearLayout>

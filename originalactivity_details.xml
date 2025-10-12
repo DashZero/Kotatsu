@@ -1,3 +1,4 @@
+
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
@@ -154,9 +155,7 @@
 					app:barrierMargin="@dimen/margin_normal"
 					app:constraint_referenced_ids="imageView_cover,chip_favorite" />
 
-				<include
-					android:id="@+id/detailsTableInclude"
-					layout="@layout/layout_details_table" />
+				<include layout="@layout/layout_details_table" />
 
 				<TextView
 					android:id="@+id/textView_description_title"
@@ -333,227 +332,11 @@
 					app:constraint_referenced_ids="recyclerView_related,textView_related_title,button_related_more"
 					tools:visibility="visible" />
 
-							<!-- COMMUNITY PREVIEW -->
-			<View
-				android:id="@+id/divider_reviews"
-				android:layout_width="0dp"
-				android:layout_height="1dp"
-				android:layout_marginTop="@dimen/margin_normal"
-				android:background="?attr/colorOutlineVariant"
-				android:visibility="gone"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/recyclerView_related"
-				tools:visibility="visible" />
-
-			<TextView
-				android:id="@+id/textView_community_title"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginStart="@dimen/margin_small"
-				android:layout_marginTop="@dimen/margin_normal"
-				android:gravity="center_vertical|start"
-				android:padding="@dimen/grid_spacing"
-				android:singleLine="true"
-				android:text="@string/threads_preview_title"
-				android:textAppearance="?textAppearanceTitleMedium"
-				android:visibility="gone"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/divider_reviews"
-				tools:visibility="visible" />
-
-			<TextView
-				android:id="@+id/textView_threads_title"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginStart="@dimen/margin_small"
-				android:layout_marginTop="@dimen/margin_small"
-				android:gravity="center_vertical|start"
-				android:padding="@dimen/grid_spacing"
-				android:singleLine="true"
-				android:text="@string/threads_recent_header"
-				android:textAppearance="?textAppearanceTitleSmall"
-				android:visibility="gone"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/textView_community_title"
-				tools:visibility="visible" />
-
-			<TextView
-				android:id="@+id/textView_threads_message"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginStart="@dimen/margin_small"
-				android:layout_marginTop="@dimen/margin_small"
-				android:layout_marginEnd="@dimen/margin_small"
-				android:gravity="start"
-				android:paddingHorizontal="@dimen/margin_small"
-				android:paddingVertical="@dimen/margin_small"
-				android:textAppearance="?attr/textAppearanceBodyMedium"
-				android:visibility="gone"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/textView_threads_title"
-				tools:text="@string/review_sign_in_required"
-				tools:visibility="visible" />
-
-			<com.google.android.material.progressindicator.CircularProgressIndicator
-				android:id="@+id/progress_threads"
-				style="@style/Widget.Material3.CircularProgressIndicator.Small"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginTop="@dimen/margin_small"
-				android:visibility="gone"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/textView_threads_title"
-				tools:visibility="visible" />
-
-			<androidx.recyclerview.widget.RecyclerView
-				android:id="@+id/recyclerView_threads"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginTop="@dimen/margin_small"
-				android:nestedScrollingEnabled="false"
-				android:overScrollMode="never"
-				android:paddingBottom="@dimen/margin_small"
-				android:visibility="gone"
-				app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/textView_threads_message"
-				tools:itemCount="2"
-				tools:listitem="@layout/item_thread_preview"
-				tools:visibility="visible" />
-
-			<com.google.android.material.button.MaterialButton
-				android:id="@+id/button_threads_more"
-				style="@style/Widget.Material3.Button.TextButton"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginTop="@dimen/margin_small"
-				android:text="@string/threads_view_more"
-				android:visibility="gone"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/recyclerView_threads"
-				tools:visibility="visible" />
-
-			<TextView
-				android:id="@+id/textView_reviews_title"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginStart="@dimen/margin_small"
-				android:layout_marginTop="@dimen/list_spacing_large"
-				android:gravity="center_vertical|start"
-				android:padding="@dimen/grid_spacing"
-				android:singleLine="true"
-				android:text="@string/reviews_recent_header"
-				android:textAppearance="?textAppearanceTitleSmall"
-				android:visibility="gone"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/button_threads_more"
-				tools:visibility="visible" />
-
-			<TextView
-				android:id="@+id/textView_reviews_message"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginStart="@dimen/margin_small"
-				android:layout_marginTop="@dimen/margin_small"
-				android:layout_marginEnd="@dimen/margin_small"
-				android:gravity="start"
-				android:paddingHorizontal="@dimen/margin_small"
-				android:paddingVertical="@dimen/margin_small"
-				android:textAppearance="?attr/textAppearanceBodyMedium"
-				android:visibility="gone"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/textView_reviews_title"
-				tools:text="@string/review_sign_in_required"
-				tools:visibility="visible" />
-
-			<com.google.android.material.progressindicator.CircularProgressIndicator
-				android:id="@+id/progress_reviews"
-				style="@style/Widget.Material3.CircularProgressIndicator.Small"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginTop="@dimen/margin_small"
-				android:visibility="gone"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/textView_reviews_title"
-				tools:visibility="visible" />
-
-			<androidx.recyclerview.widget.RecyclerView
-				android:id="@+id/recyclerView_reviews"
-				android:layout_width="0dp"
-				android:layout_height="wrap_content"
-				android:layout_marginTop="@dimen/margin_small"
-				android:nestedScrollingEnabled="false"
-				android:overScrollMode="never"
-				android:paddingBottom="@dimen/margin_small"
-				android:visibility="gone"
-				app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-				app:layout_constraintEnd_toEndOf="parent"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/textView_reviews_message"
-				tools:itemCount="2"
-				tools:listitem="@layout/item_review"
-				tools:visibility="visible" />
-
-			<com.google.android.material.button.MaterialButton
-				android:id="@+id/button_reviews_more"
-				style="@style/Widget.Material3.Button.TextButton"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginTop="@dimen/margin_small"
-				android:text="@string/reviews_view_more"
-				android:visibility="gone"
-				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@id/recyclerView_reviews"
-				tools:visibility="visible" />
-
-			<androidx.constraintlayout.widget.Group
-				android:id="@+id/group_threads"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:visibility="gone"
-				app:constraint_referenced_ids="textView_threads_title,textView_threads_message,progress_threads,recyclerView_threads,button_threads_more"
-				tools:visibility="visible" />
-
-			<androidx.constraintlayout.widget.Group
-				android:id="@+id/group_reviews"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:visibility="gone"
-				app:constraint_referenced_ids="textView_reviews_title,textView_reviews_message,progress_reviews,recyclerView_reviews,button_reviews_more"
-				tools:visibility="visible" />
-		</androidx.constraintlayout.widget.ConstraintLayout>
+			</androidx.constraintlayout.widget.ConstraintLayout>
 
 		</androidx.core.widget.NestedScrollView>
 
 	</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-	<View
-		android:id="@+id/navbar_dim"
-		android:layout_width="0dp"
-		android:layout_height="0dp"
-		android:visibility="gone"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toBottomOf="@id/swipeRefreshLayout" />
-
-	<FrameLayout
-		android:id="@+id/container_bottom_sheet"
-		android:layout_width="0dp"
-		android:layout_height="wrap_content"
-		android:visibility="gone"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent" />
 
 	<com.google.android.material.card.MaterialCardView
 		android:id="@+id/card_chapters"

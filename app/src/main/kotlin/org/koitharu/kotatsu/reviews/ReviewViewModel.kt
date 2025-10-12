@@ -39,6 +39,10 @@ class ReviewViewModel @Inject constructor(
 	val messages: EventFlow<ReviewMessage>
 		get() = _messages
 
+	private val _openReviewDetails = MutableEventFlow<ReviewDetailNav>()
+	val openReviewDetails: EventFlow<ReviewDetailNav>
+		get() = _openReviewDetails
+
 	private var resolvedMediaId: Int? = null
 
 	init {
@@ -112,6 +116,26 @@ class ReviewViewModel @Inject constructor(
 		}
 	}
 
+	fun saveDraft(summary: String, body: String, score: Int) {
+		val mediaId = resolvedMediaId ?: return
+		launchJob {
+			repository.saveDraft(mediaId, summary, body, score)
+			_messages.call(ReviewMessage.Resource(R.string.review_draft_saved))
+		}
+	}
+
+	suspend fun loadDraft(): ReviewDraft? {
+		val mediaId = resolvedMediaId ?: return null
+		return repository.loadDraft(mediaId)
+	}
+
+	fun clearDraft() {
+		val mediaId = resolvedMediaId ?: return
+		launchJob {
+			repository.clearDraft(mediaId)
+		}
+	}
+
 	fun deleteReview() {
 		val mediaId = resolvedMediaId ?: return
 		val reviewId = (_state.value as? ReviewUiState.Content)?.myReview?.id ?: return
@@ -133,6 +157,45 @@ class ReviewViewModel @Inject constructor(
 				errorEvent.call(error)
 			}
 		}
+	}
+
+	fun onReviewSelected(review: AniListReview) {
+		val mediaId = resolvedMediaId ?: review.mediaId
+		val viewerId = (_state.value as? ReviewUiState.Content)?.viewer?.id
+		_openReviewDetails.call(ReviewDetailNav(review, mediaId, viewerId))
+	}
+
+	fun updateReview(review: AniListReview) {
+		val currentList = _reviews.value.toMutableList()
+		val index = currentList.indexOfFirst { it.id == review.id }
+		if (index >= 0) {
+			currentList[index] = review
+		} else {
+			currentList.add(0, review)
+		}
+		_reviews.value = currentList
+		val content = _state.value as? ReviewUiState.Content ?: return
+		val viewerId = content.viewer?.id
+		val updatedContent = content.copy(
+			reviews = currentList,
+			myReview = if (viewerId != null && review.user.id == viewerId) review else content.myReview,
+		)
+		_state.value = updatedContent
+	}
+
+	fun removeReview(reviewId: Long) {
+		val currentList = _reviews.value.toMutableList()
+		val index = currentList.indexOfFirst { it.id == reviewId }
+		if (index >= 0) {
+			currentList.removeAt(index)
+			_reviews.value = currentList
+		}
+		val content = _state.value as? ReviewUiState.Content ?: return
+		val updatedContent = content.copy(
+			reviews = currentList,
+			myReview = content.myReview.takeUnless { it?.id == reviewId },
+		)
+		_state.value = updatedContent
 	}
 
 	suspend fun renderMarkdown(markdown: String): Result<String> = withContext(Dispatchers.IO) {

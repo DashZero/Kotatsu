@@ -2,7 +2,6 @@ package org.koitharu.kotatsu.details.ui
 
 import android.app.assist.AssistContent
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.text.SpannedString
@@ -11,8 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.Toast
-import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.text.buildSpannedString
 import androidx.core.text.inSpans
@@ -23,10 +20,6 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.core.view.updatePaddingRelative
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.transition.TransitionManager
 import coil3.ImageLoader
@@ -39,7 +32,6 @@ import coil3.size.Precision
 import coil3.transform.RoundedCornersTransformation
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.chip.Chip
-import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
@@ -47,7 +39,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.bookmarks.domain.Bookmark
 import org.koitharu.kotatsu.core.image.CoilMemoryCacheKey
@@ -93,7 +84,6 @@ import org.koitharu.kotatsu.core.util.ext.start
 import org.koitharu.kotatsu.core.util.ext.textAndVisible
 import org.koitharu.kotatsu.core.util.ext.toUriOrNull
 import org.koitharu.kotatsu.databinding.ActivityDetailsBinding
-import org.koitharu.kotatsu.databinding.LayoutCommunityPreviewsBinding
 import org.koitharu.kotatsu.databinding.LayoutDetailsTableBinding
 import org.koitharu.kotatsu.details.data.MangaDetails
 import org.koitharu.kotatsu.details.data.ReadingTime
@@ -116,22 +106,7 @@ import org.koitharu.kotatsu.parsers.model.MangaTag
 import org.koitharu.kotatsu.parsers.util.ifNullOrEmpty
 import org.koitharu.kotatsu.parsers.util.nullIfEmpty
 import org.koitharu.kotatsu.parsers.util.toTitleCase
-import org.koitharu.kotatsu.reviews.AniListReview
-import org.koitharu.kotatsu.reviews.ARG_MANGA_ID
-import org.koitharu.kotatsu.reviews.ARG_MANGA_TITLE
-import org.koitharu.kotatsu.reviews.ReviewDetailActivity
-import org.koitharu.kotatsu.reviews.ReviewDetailNav
-import org.koitharu.kotatsu.reviews.ReviewListAdapter
-import org.koitharu.kotatsu.reviews.ReviewMessage
-import org.koitharu.kotatsu.reviews.ReviewUiState
-import org.koitharu.kotatsu.reviews.ReviewViewModel
 import org.koitharu.kotatsu.scrobbling.common.domain.model.ScrobblingInfo
-import org.koitharu.kotatsu.threads.ThreadDetailActivity
-import org.koitharu.kotatsu.threads.THREAD_ARG_MANGA_ID
-import org.koitharu.kotatsu.threads.THREAD_ARG_MANGA_TITLE
-import org.koitharu.kotatsu.threads.ThreadPreviewAdapter
-import org.koitharu.kotatsu.threads.ThreadPreviewState
-import org.koitharu.kotatsu.threads.ThreadPreviewViewModel
 import javax.inject.Inject
 import kotlin.math.roundToInt
 import com.google.android.material.R as materialR
@@ -158,36 +133,8 @@ class DetailsActivity :
 	lateinit var settings: AppSettings
 
 	private val viewModel: DetailsViewModel by viewModels()
-	private val threadPreviewViewModel: ThreadPreviewViewModel by viewModels()
-	private val reviewViewModel: ReviewViewModel by viewModels()
-
 	private lateinit var menuProvider: DetailsMenuProvider
 	private lateinit var infoBinding: LayoutDetailsTableBinding
-	private var communityBinding: LayoutCommunityPreviewsBinding? = null
-
-	private val threadPreviewAdapter = ThreadPreviewAdapter { thread ->
-		threadPreviewViewModel.onThreadSelected(thread)
-	}
-
-	private val reviewsAdapter = ReviewListAdapter { review ->
-		reviewViewModel.onReviewSelected(review)
-	}
-
-	private val reviewDetailLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-		if (result.resultCode != RESULT_OK) {
-			return@registerForActivityResult
-		}
-		val data = result.data ?: return@registerForActivityResult
-		@Suppress("DEPRECATION")
-		val updated = data.getParcelableExtra<AniListReview>(ReviewDetailActivity.EXTRA_RESULT_REVIEW)
-		if (updated != null) {
-			reviewViewModel.updateReview(updated)
-		}
-		val deletedId = data.getLongExtra(ReviewDetailActivity.EXTRA_RESULT_DELETED_ID, 0L)
-		if (deletedId != 0L) {
-			reviewViewModel.removeReview(deletedId)
-		}
-	}
 
 	override val bottomSheet: View?
 		get() = viewBinding.containerBottomSheet
@@ -195,13 +142,9 @@ class DetailsActivity :
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(ActivityDetailsBinding.inflate(layoutInflater))
-		infoBinding = viewBinding.detailsTableInclude ?: LayoutDetailsTableBinding.bind(viewBinding.root)
-		communityBinding = viewBinding.communityPreviewsInclude
-		ensureCommunityExtras()
-
+		infoBinding = LayoutDetailsTableBinding.bind(viewBinding.root)
 		setDisplayHomeAsUp(isEnabled = true, showUpAsClose = false)
 		supportActionBar?.setDisplayShowTitleEnabled(false)
-
 		viewBinding.chipFavorite.setOnClickListener(this)
 		infoBinding.textViewLocal.setOnClickListener(this)
 		infoBinding.textViewSource.setOnClickListener(this)
@@ -229,15 +172,13 @@ class DetailsActivity :
 			)
 		}
 
-		setupCommunitySections()
-
 		val appRouter = router
 		viewModel.mangaDetails.filterNotNull().observe(this, ::onMangaUpdated)
 		viewModel.coverUrl.observe(this, ::loadCover)
 		viewModel.onMangaRemoved.observeEvent(this, ::onMangaRemoved)
 		viewModel.onError
 			.filterNot { appRouter.isChapterPagesSheetShown() }
-			.observeEvent(this, DetailsErrorObserver(this, viewModel, exceptionResolver, viewBinding.scrollView))
+			.observeEvent(this, DetailsErrorObserver(this, viewModel, exceptionResolver))
 		viewModel.onActionDone
 			.filterNot { appRouter.isChapterPagesSheetShown() }
 			.observeEvent(this, ReversibleActionObserver(viewBinding.scrollView))
@@ -264,17 +205,6 @@ class DetailsActivity :
 			appShortcutManager = shortcutManager,
 		)
 		addMenuProvider(menuProvider)
-	}
-
-	private fun ensureCommunityExtras() {
-		val extras = intent.extras ?: Bundle().also { intent.replaceExtras(it) }
-		if (!extras.containsKey(THREAD_ARG_MANGA_ID)) {
-			val mangaId = extras.getLong(ARG_MANGA_ID, 0L).takeIf { it != 0L } ?: viewModel.mangaId
-			extras.putLong(THREAD_ARG_MANGA_ID, mangaId)
-		}
-		if (!extras.containsKey(THREAD_ARG_MANGA_TITLE)) {
-			extras.getString(ARG_MANGA_TITLE)?.let { extras.putString(THREAD_ARG_MANGA_TITLE, it) }
-		}
 	}
 
 	override fun onProvideAssistContent(outContent: AssistContent) {
@@ -366,8 +296,6 @@ class DetailsActivity :
 
 	override fun onRefresh() {
 		viewModel.reload()
-		threadPreviewViewModel.reload(force = true)
-		reviewViewModel.reload(force = true)
 	}
 
 	override fun onDraw() {
@@ -486,8 +414,8 @@ class DetailsActivity :
 	private fun onMangaUpdated(details: MangaDetails) {
 		val manga = details.toManga()
 		with(viewBinding) {
-				textViewTitle.text = manga.title
-				textViewSubtitle.textAndVisible = manga.altTitles.joinToString("\n")
+			textViewTitle.text = manga.title
+			textViewSubtitle.textAndVisible = manga.altTitles.joinToString("\n")
 			textViewNsfw16.isVisible = manga.contentRating == ContentRating.SUGGESTIVE
 			textViewNsfw18.isVisible = manga.contentRating == ContentRating.ADULT
 			textViewDescription.text = details.description.ifNullOrEmpty { getString(R.string.no_description) }
@@ -621,188 +549,6 @@ class DetailsActivity :
 			}
 		}.nullIfEmpty()
 	}
-	private fun setupCommunitySections() {
-		val threadSection = resolveThreadSection()
-		val reviewSection = resolveReviewSection()
-		val activityRouter = this@DetailsActivity.router
-
-		threadSection?.recycler?.adapter = threadPreviewAdapter
-		reviewSection?.recycler?.adapter = reviewsAdapter
-
-		lifecycleScope.launch {
-			repeatOnLifecycle(Lifecycle.State.STARTED) {
-				threadSection?.let { section ->
-					launch {
-						threadPreviewViewModel.state.collect { state ->
-							renderThreadState(section, state)
-						}
-					}
-				}
-				reviewSection?.let { section ->
-					launch {
-						reviewViewModel.state.collect { state ->
-							renderReviewState(section, state)
-						}
-					}
-				}
-			}
-		}
-
-		threadPreviewViewModel.openThreadDetails.observeEvent(this) { thread ->
-			activityRouter.openThreadDetail(viewModel.getMangaOrNull()?.title, thread)
-		}
-		reviewViewModel.openReviewDetails.observeEvent(this) { nav ->
-			reviewDetailLauncher.launch(ReviewDetailActivity.createIntent(this, nav))
-		}
-		reviewViewModel.messages.observeEvent(this) { message ->
-			val anchor = reviewSection?.recycler ?: viewBinding.scrollView
-			when (message) {
-				is ReviewMessage.Resource -> Snackbar
-					.make(anchor, getString(message.resId, *message.formatArgs), Snackbar.LENGTH_SHORT)
-					.show()
-
-				is ReviewMessage.Plain -> Snackbar
-					.make(anchor, message.value, Snackbar.LENGTH_SHORT)
-					.show()
-			}
-		}
-	}
-
-	private fun resolveThreadSection(): CommunitySection? {
-		communityBinding?.let { binding ->
-			return CommunitySection(
-				recycler = binding.recyclerViewThreads,
-				progress = binding.progressThreads,
-				message = binding.textViewThreadsMessage,
-				viewMore = binding.buttonThreadsMore,
-			)
-		}
-		val recycler = viewBinding.recyclerViewThreads ?: return null
-		val progress = viewBinding.progressThreads ?: return null
-		val message = viewBinding.textViewThreadsMessage ?: return null
-		val viewMore = viewBinding.buttonThreadsMore
-		return CommunitySection(recycler, progress, message, viewMore)
-	}
-
-	private fun resolveReviewSection(): CommunitySection? {
-		communityBinding?.let { binding ->
-			return CommunitySection(
-				recycler = binding.recyclerViewReviews,
-				progress = binding.progressReviews,
-				message = binding.textViewReviewsMessage,
-				viewMore = binding.buttonReviewsMore,
-			)
-		}
-		val recycler = viewBinding.recyclerViewReviews ?: return null
-		val progress = viewBinding.progressReviews ?: return null
-		val message = viewBinding.textViewReviewsMessage ?: return null
-		val viewMore = viewBinding.buttonReviewsMore
-		return CommunitySection(recycler, progress, message, viewMore)
-	}
-
-	private fun renderThreadState(section: CommunitySection, state: ThreadPreviewState) {
-		when (state) {
-			ThreadPreviewState.Loading -> {
-				section.progress.isVisible = true
-				section.recycler.isVisible = false
-				section.message.isVisible = false
-				section.viewMore?.isVisible = false
-			}
-
-			ThreadPreviewState.NotAuthorized -> {
-				section.progress.isVisible = false
-				section.recycler.isVisible = false
-				section.message.isVisible = true
-				section.message.setText(R.string.threads_sign_in_required)
-				section.viewMore?.isVisible = false
-			}
-
-			ThreadPreviewState.NotTracked -> {
-				section.progress.isVisible = false
-				section.recycler.isVisible = false
-				section.message.isVisible = true
-				section.message.setText(R.string.threads_track_required)
-				section.viewMore?.isVisible = false
-			}
-
-			is ThreadPreviewState.Content -> {
-				section.progress.isVisible = false
-				threadPreviewAdapter.submitList(state.threads)
-				val hasThreads = state.threads.isNotEmpty()
-				section.recycler.isVisible = hasThreads
-				if (hasThreads) {
-					section.message.isVisible = false
-				} else {
-					section.message.isVisible = true
-					section.message.setText(R.string.threads_empty)
-				}
-				val manga = viewModel.getMangaOrNull()
-				section.viewMore?.apply {
-					isVisible = manga != null
-					setOnClickListener {
-						val target = manga ?: return@setOnClickListener
-						this@DetailsActivity.router.openThreadList(target, state.mediaId)
-					}
-				}
-			}
-		}
-	}
-
-	private fun renderReviewState(section: CommunitySection, state: ReviewUiState) {
-		when (state) {
-			ReviewUiState.Loading -> {
-				section.progress.isVisible = true
-				section.recycler.isVisible = false
-				section.message.isVisible = false
-				section.viewMore?.isVisible = false
-			}
-
-			ReviewUiState.NotAuthorized -> {
-				section.progress.isVisible = false
-				section.recycler.isVisible = false
-				section.message.isVisible = true
-				section.message.setText(R.string.review_sign_in_required)
-				section.viewMore?.isVisible = false
-			}
-
-			ReviewUiState.NotTracked -> {
-				section.progress.isVisible = false
-				section.recycler.isVisible = false
-				section.message.isVisible = true
-				section.message.setText(R.string.review_track_required)
-				section.viewMore?.isVisible = false
-			}
-
-			is ReviewUiState.Content -> {
-				section.progress.isVisible = false
-				reviewsAdapter.viewerId = state.viewer?.id
-				reviewsAdapter.submitList(state.reviews)
-				val hasReviews = state.reviews.isNotEmpty()
-				section.recycler.isVisible = hasReviews
-				if (hasReviews) {
-					section.message.isVisible = false
-				} else {
-					section.message.isVisible = true
-					section.message.setText(R.string.reviews_empty)
-				}
-				val manga = viewModel.getMangaOrNull()
-				section.viewMore?.apply {
-					isVisible = manga != null
-					setOnClickListener {
-						val target = manga ?: return@setOnClickListener
-						this@DetailsActivity.router.showReviews(target)
-					}
-				}
-			}
-		}
-	}
-
-	private data class CommunitySection(
-		val recycler: RecyclerView,
-		val progress: View,
-		val message: TextView,
-		val viewMore: View?,
-	)
 
 	private class PrefetchObserver(
 		private val context: Context,
@@ -823,6 +569,7 @@ class DetailsActivity :
 	}
 
 	companion object {
+
 		private const val FAV_LABEL_LIMIT = 16
 	}
 }

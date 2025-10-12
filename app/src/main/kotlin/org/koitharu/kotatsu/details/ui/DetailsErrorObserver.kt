@@ -1,5 +1,6 @@
 package org.koitharu.kotatsu.details.ui
 
+import android.view.View
 import com.google.android.material.snackbar.Snackbar
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.exceptions.UnsupportedSourceException
@@ -15,8 +16,9 @@ class DetailsErrorObserver(
 	override val activity: DetailsActivity,
 	private val viewModel: DetailsViewModel,
 	resolver: ExceptionResolver?,
+	hostView: View,
 ) : ErrorObserver(
-	activity.viewBinding.scrollView, null, resolver,
+	hostView, null, resolver,
 	{ isResolved ->
 		if (isResolved) {
 			viewModel.reload()

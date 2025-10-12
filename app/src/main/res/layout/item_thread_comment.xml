@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:id="@+id/root"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:layout_marginHorizontal="@dimen/list_spacing_large"
+	android:layout_marginVertical="@dimen/list_spacing_small"
+	app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+	app:cardCornerRadius="@dimen/m3_card_corner"
+	app:cardElevation="0dp"
+	app:strokeColor="?attr/colorOutlineVariant"
+	app:strokeWidth="1dp">
+
+	<androidx.constraintlayout.widget.ConstraintLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:paddingHorizontal="@dimen/list_spacing_large"
+		android:paddingVertical="@dimen/list_spacing_normal">
+
+		<org.koitharu.kotatsu.core.image.CoilImageView
+			android:id="@+id/imageAvatar"
+			android:layout_width="40dp"
+			android:layout_height="40dp"
+			android:contentDescription="@string/thread_reply"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent"
+			app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Circle"
+			app:strokeWidth="0dp"
+			tools:src="@tools:sample/avatars" />
+
+		<com.google.android.material.textview.MaterialTextView
+			android:id="@+id/textMeta"
+			style="?attr/textAppearanceTitleSmall"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="@dimen/list_spacing_normal"
+			android:textColor="?attr/colorOnSurface"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toEndOf="@id/imageAvatar"
+			app:layout_constraintTop_toTopOf="@id/imageAvatar"
+			app:layout_constraintVertical_chainStyle="packed"
+			tools:text="Sakura • 5m ago" />
+
+		<com.google.android.material.textview.MaterialTextView
+			android:id="@+id/textBody"
+			style="?attr/textAppearanceBodyMedium"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="@dimen/list_spacing_normal"
+			android:layout_marginTop="@dimen/list_spacing_small"
+			android:textColor="?attr/colorOnSurfaceVariant"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toEndOf="@id/imageAvatar"
+			app:layout_constraintTop_toBottomOf="@id/textMeta"
+			tools:text="@tools:sample/lorem/random" />
+
+		<LinearLayout
+			android:id="@+id/layoutActions"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="@dimen/list_spacing_normal"
+			android:layout_marginTop="@dimen/list_spacing_small"
+			android:gravity="center_vertical"
+			android:orientation="horizontal"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toEndOf="@id/imageAvatar"
+			app:layout_constraintTop_toBottomOf="@id/textBody">
+
+		<com.google.android.material.chip.Chip
+			android:id="@+id/chipLikes"
+			style="@style/Widget.Kotatsu.Chip.Assist"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			app:checkedIconVisible="false"
+			android:textAppearance="?attr/textAppearanceLabelSmall"
+			android:textColor="?attr/colorOnSurfaceVariant"
+			app:chipBackgroundColor="?attr/colorSurfaceContainerHigh"
+			app:chipEndPadding="@dimen/list_spacing_small"
+			app:chipIcon="@drawable/ic_heart_outline"
+			app:chipIconSize="16dp"
+			app:chipIconTint="?attr/colorOnSurfaceVariant"
+			app:chipMinHeight="28dp"
+			app:chipStartPadding="@dimen/list_spacing_small"
+				tools:text="24" />
+
+		<com.google.android.material.button.MaterialButton
+			android:id="@+id/buttonReply"
+			style="@style/Widget.Material3.Button.TextButton"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="@dimen/list_spacing_small"
+			android:minHeight="0dp"
+			android:paddingHorizontal="@dimen/list_spacing_small"
+			android:paddingVertical="4dp"
+			android:text="@string/thread_reply"
+			android:textAppearance="?attr/textAppearanceLabelMedium"
+			tools:visibility="visible" />
+		</LinearLayout>
+
+	</androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

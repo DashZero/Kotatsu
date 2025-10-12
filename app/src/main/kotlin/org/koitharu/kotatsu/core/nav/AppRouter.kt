@@ -109,6 +109,14 @@ import org.koitharu.kotatsu.suggestions.ui.SuggestionsActivity
 import org.koitharu.kotatsu.reviews.ARG_MANGA_ID
 import org.koitharu.kotatsu.reviews.ARG_MANGA_TITLE
 import org.koitharu.kotatsu.reviews.ReviewsSheet
+import org.koitharu.kotatsu.threads.ThreadDetailActivity
+import org.koitharu.kotatsu.threads.ThreadDetailActivity.Companion.EXTRA_THREAD
+import org.koitharu.kotatsu.threads.ThreadListActivity
+import org.koitharu.kotatsu.threads.THREAD_ARG_MANGA_ID
+import org.koitharu.kotatsu.threads.THREAD_ARG_MANGA_TITLE
+import org.koitharu.kotatsu.threads.THREAD_EXTRA_MEDIA_ID
+import org.koitharu.kotatsu.threads.THREAD_EXTRA_THREAD_ID
+import org.koitharu.kotatsu.threads.AniListThread
 import org.koitharu.kotatsu.tracker.ui.updates.UpdatesActivity
 import java.io.File
 import androidx.appcompat.R as appcompatR
@@ -187,6 +195,32 @@ class AppRouter private constructor(
 		startActivity(
 			Intent(contextOrNull(), RelatedMangaActivity::class.java)
 				.putExtra(KEY_MANGA, ParcelableManga(manga)),
+		)
+	}
+
+	fun openThreadList(manga: Manga, mediaId: Int) {
+		startActivity(
+			Intent(contextOrNull() ?: return, ThreadListActivity::class.java)
+				.putExtra(THREAD_ARG_MANGA_ID, manga.id)
+				.putExtra(THREAD_ARG_MANGA_TITLE, manga.title)
+				.putExtra(THREAD_EXTRA_MEDIA_ID, mediaId),
+		)
+	}
+
+	fun openThreadDetail(mangaTitle: String?, thread: AniListThread) {
+		startActivity(
+			Intent(contextOrNull() ?: return, ThreadDetailActivity::class.java)
+				.putExtra(THREAD_ARG_MANGA_TITLE, mangaTitle)
+				.putExtra(THREAD_EXTRA_THREAD_ID, thread.id)
+				.putExtra(EXTRA_THREAD, thread),
+		)
+	}
+
+	fun openThreadDetail(mangaTitle: String?, threadId: Long) {
+		startActivity(
+			Intent(contextOrNull() ?: return, ThreadDetailActivity::class.java)
+				.putExtra(THREAD_ARG_MANGA_TITLE, mangaTitle)
+				.putExtra(THREAD_EXTRA_THREAD_ID, threadId),
 		)
 	}
 

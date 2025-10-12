@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<androidx.constraintlayout.widget.ConstraintLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	android:clipToPadding="false"
 	tools:context=".details.ui.DetailsActivity"
 	tools:ignore="ViewBindingType"
 	tools:viewBindingType="android.view.ViewGroup">
 
 	<com.google.android.material.appbar.AppBarLayout
 		android:id="@+id/appbar"
-		android:layout_width="match_parent"
+		android:layout_width="0dp"
 		android:layout_height="wrap_content"
 		android:elevation="0dp"
 		android:fitsSystemWindows="true"
 		app:elevation="0dp"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintHorizontal_bias="0"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent"
+		app:layout_constraintWidth_max="420dp"
+		app:layout_constraintWidth_percent="0.5"
 		app:liftOnScroll="false">
 
 		<com.google.android.material.appbar.MaterialToolbar
@@ -28,9 +33,12 @@
 
 	<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 		android:id="@+id/swipeRefreshLayout"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
+		android:layout_width="0dp"
+		android:layout_height="0dp"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="@id/appbar"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/appbar">
 
 		<androidx.core.widget.NestedScrollView
 			android:id="@+id/scrollView"
@@ -42,7 +50,7 @@
 
 			<androidx.constraintlayout.widget.ConstraintLayout
 				android:layout_width="match_parent"
-				android:layout_height="match_parent"
+				android:layout_height="wrap_content"
 				android:paddingBottom="@dimen/margin_normal">
 
 				<org.koitharu.kotatsu.image.ui.CoverImageView
@@ -102,7 +110,7 @@
 					android:layout_marginTop="16dp"
 					android:layout_marginEnd="16dp"
 					android:ellipsize="end"
-					android:maxLines="@integer/details_title_lines"
+					android:maxLines="5"
 					android:textAppearance="?attr/textAppearanceHeadlineSmall"
 					android:textIsSelectable="true"
 					app:layout_constraintEnd_toEndOf="parent"
@@ -146,7 +154,9 @@
 					app:barrierMargin="@dimen/margin_normal"
 					app:constraint_referenced_ids="imageView_cover,chip_favorite" />
 
-				<include layout="@layout/layout_details_table" />
+				<include
+				    android:id="@+id/detailsTableInclude"
+				    layout="@layout/layout_details_table" />
 
 				<TextView
 					android:id="@+id/textView_description_title"
@@ -154,7 +164,6 @@
 					android:layout_height="wrap_content"
 					android:layout_marginStart="@dimen/margin_small"
 					android:layout_marginTop="@dimen/margin_normal"
-					android:layout_weight="1"
 					android:gravity="center_vertical|start"
 					android:padding="@dimen/grid_spacing"
 					android:singleLine="true"
@@ -162,7 +171,7 @@
 					android:textAppearance="?textAppearanceTitleSmall"
 					app:layout_constraintEnd_toStartOf="@id/button_description_more"
 					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toBottomOf="@id/textView_progress_label" />
+					app:layout_constraintTop_toBottomOf="@id/detailsTableInclude" />
 
 				<Button
 					android:id="@+id/button_description_more"
@@ -197,7 +206,7 @@
 					android:layout_width="0dp"
 					android:layout_height="wrap_content"
 					android:layout_marginHorizontal="@dimen/screen_padding"
-					android:layout_marginTop="@dimen/margin_normal"
+					android:layout_marginTop="@dimen/margin_small"
 					app:chipSpacingHorizontal="6dp"
 					app:chipSpacingVertical="6dp"
 					app:layout_constraintEnd_toEndOf="parent"
@@ -309,149 +318,69 @@
 					app:constraint_referenced_ids="recyclerView_related,textView_related_title,button_related_more"
 					tools:visibility="visible" />
 
-				<!-- ANILIST REVIEW -->
-				<View
-					android:id="@+id/divider_reviews"
+				<include
+					android:id="@+id/communityPreviewsInclude"
+					layout="@layout/layout_community_previews"
 					android:layout_width="0dp"
-					android:layout_height="1dp"
+					android:layout_height="wrap_content"
 					android:layout_marginTop="@dimen/margin_normal"
-					android:background="?attr/colorOutlineVariant"
-					android:visibility="gone"
-					app:layout_constraintEnd_toEndOf="parent"
+					app:layout_constraintTop_toBottomOf="@id/group_related"
 					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toBottomOf="@id/recyclerView_related"
-					tools:visibility="visible" />
-
-				<TextView
-					android:id="@+id/textView_reviews_title"
-					android:layout_width="0dp"
-					android:layout_height="wrap_content"
-					android:layout_marginStart="@dimen/margin_small"
-					android:layout_marginTop="@dimen/margin_normal"
-					android:gravity="center_vertical|start"
-					android:padding="@dimen/grid_spacing"
-					android:singleLine="true"
-					android:text="@string/reviews_title"
-					android:textAppearance="?textAppearanceTitleSmall"
-					android:visibility="gone"
-					app:layout_constraintEnd_toStartOf="@id/button_reviews_write"
-					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toBottomOf="@id/divider_reviews"
-					tools:visibility="visible" />
-
-				<com.google.android.material.button.MaterialButton
-					android:id="@+id/button_reviews_write"
-					style="@style/Widget.Material3.Button.TonalButton"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:layout_marginEnd="@dimen/margin_small"
-					android:text="@string/review_write"
-					android:visibility="gone"
-					app:icon="@drawable/ic_edit"
-					app:iconPadding="@dimen/grid_spacing"
-					app:iconTint="?attr/colorOnPrimaryContainer"
-					app:layout_constraintBaseline_toBaselineOf="@id/textView_reviews_title"
-					app:layout_constraintEnd_toStartOf="@id/button_reviews_delete"
-					tools:visibility="visible" />
-
-				<com.google.android.material.button.MaterialButton
-					android:id="@+id/button_reviews_delete"
-					style="@style/Widget.Material3.Button.TextButton"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:text="@string/review_delete"
-					android:visibility="gone"
-					app:icon="@drawable/ic_delete"
-					app:iconPadding="@dimen/grid_spacing"
-					app:layout_constraintBaseline_toBaselineOf="@id/textView_reviews_title"
-					app:layout_constraintEnd_toEndOf="parent"
-					app:layout_constraintStart_toEndOf="@id/button_reviews_write"
-					tools:visibility="gone" />
-
-				<TextView
-					android:id="@+id/textView_reviews_message"
-					android:layout_width="0dp"
-					android:layout_height="wrap_content"
-					android:layout_marginStart="@dimen/margin_small"
-					android:layout_marginTop="@dimen/margin_small"
-					android:layout_marginEnd="@dimen/margin_small"
-					android:gravity="start"
-					android:paddingHorizontal="@dimen/margin_small"
-					android:paddingVertical="@dimen/margin_small"
-					android:textAppearance="?attr/textAppearanceBodyMedium"
-					android:visibility="gone"
-					app:layout_constraintEnd_toEndOf="parent"
-					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toBottomOf="@id/textView_reviews_title"
-					tools:text="@string/review_sign_in_required"
-					tools:visibility="visible" />
-
-				<com.google.android.material.progressindicator.CircularProgressIndicator
-					android:id="@+id/progress_reviews"
-					style="@style/Widget.Material3.CircularProgressIndicator.Small"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:layout_marginTop="@dimen/margin_small"
-					android:visibility="gone"
-					app:layout_constraintEnd_toEndOf="parent"
-					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toBottomOf="@id/textView_reviews_title"
-					tools:visibility="visible" />
-
-				<androidx.recyclerview.widget.RecyclerView
-					android:id="@+id/recyclerView_reviews"
-					android:layout_width="0dp"
-					android:layout_height="wrap_content"
-					android:layout_marginTop="@dimen/margin_small"
-					android:nestedScrollingEnabled="false"
-					android:overScrollMode="never"
-					android:paddingBottom="@dimen/margin_small"
-					android:visibility="gone"
-					app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-					app:layout_constraintBottom_toBottomOf="parent"
-					app:layout_constraintEnd_toEndOf="parent"
-					app:layout_constraintStart_toStartOf="parent"
-					app:layout_constraintTop_toBottomOf="@id/textView_reviews_message"
-					tools:itemCount="2"
-					tools:listitem="@layout/item_review"
-					tools:visibility="visible" />
-
-				<androidx.constraintlayout.widget.Group
-					android:id="@+id/group_reviews"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:visibility="gone"
-					app:constraint_referenced_ids="divider_reviews,textView_reviews_title,button_reviews_write,button_reviews_delete,textView_reviews_message,progress_reviews,recyclerView_reviews"
-					tools:visibility="visible" />
+					app:layout_constraintEnd_toEndOf="parent" />
 
 			</androidx.constraintlayout.widget.ConstraintLayout>
 
 		</androidx.core.widget.NestedScrollView>
+
 	</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-	<androidx.fragment.app.FragmentContainerView
-		android:id="@+id/container_bottom_sheet"
-		android:name="org.koitharu.kotatsu.details.ui.pager.ChaptersPagesSheet"
-		style="@style/Widget.Material3.BottomSheet"
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		android:elevation="6dp"
-		android:nestedScrollingEnabled="false"
-		android:outlineProvider="background"
-		app:behavior_fitToContents="false"
-		app:behavior_hideable="false"
-		app:behavior_peekHeight="@dimen/details_bs_peek_height"
-		app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
-		app:paddingBottomSystemWindowInsets="false"
-		tools:layout="@layout/sheet_chapters_pages" />
-
 	<View
-		android:id="@+id/navbarDim"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:layout_gravity="bottom"
-		android:background="?colorSurfaceContainerLow"
-		android:elevation="9dp"
-		tools:layout_height="10dp" />
+		android:id="@+id/navbar_dim"
+		android:layout_width="0dp"
+		android:layout_height="0dp"
+		android:alpha="0"
+		android:background="@color/kotatsu_background_scrim"
+		android:visibility="gone"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/swipeRefreshLayout"
+		tools:visibility="visible" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+	<FrameLayout
+		android:id="@+id/container_bottom_sheet"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:background="@drawable/bg_rounded_transparency"
+		android:clipToPadding="false"
+		android:visibility="gone"
+		app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		app:behavior_fitToContents="false"
+		app:behavior_halfExpandedRatio="0.5"
+		app:behavior_hideable="true"
+		app:behavior_peekHeight="@dimen/details_bs_peek_height"
+		tools:visibility="gone" />
+
+	<com.google.android.material.card.MaterialCardView
+		android:id="@+id/card_chapters"
+		android:layout_width="0dp"
+		android:layout_height="0dp"
+		android:layout_marginTop="@dimen/grid_spacing_outer"
+		android:layout_marginEnd="@dimen/side_card_offset"
+		android:layout_marginBottom="@dimen/side_card_offset"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toEndOf="@id/appbar"
+		app:layout_constraintTop_toTopOf="parent">
+
+		<androidx.fragment.app.FragmentContainerView
+			android:id="@+id/container_side"
+			android:name="org.koitharu.kotatsu.details.ui.pager.ChaptersPagesSheet"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent" />
+
+	</com.google.android.material.card.MaterialCardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -12,7 +12,6 @@
 	<dimen name="nav_bar_height_compact">0dp</dimen>
 
 	<dimen name="grid_spacing">8dp</dimen>
-	<dimen name="grid_spacing_double">16dp</dimen>
 	<dimen name="list_spacing">8dp</dimen>
 	<dimen name="grid_spacing_outer">2dp</dimen>
 	<dimen name="grid_spacing_outer_double">4dp</dimen>
@@ -83,5 +82,4 @@
 
 	<dimen name="chip_icon_corner">3dp</dimen>
 	<dimen name="read_button_min_width">92dp</dimen>
-	<dimen name="reviews_content_max_width">720dp</dimen>
 </resources>

@@ -1,11 +1,13 @@
 package org.koitharu.kotatsu.reviews
 
+import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ViewAnimator
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.viewModels
@@ -34,7 +36,25 @@ class ReviewsSheet : BaseAdaptiveSheet<SheetReviewsBinding>() {
 
 	private val viewModel: ReviewViewModel by viewModels()
 
-	private val adapter = ReviewListAdapter()
+	private val adapter = ReviewListAdapter { review ->
+		viewModel.onReviewSelected(review)
+	}
+
+	private val detailLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+		if (result.resultCode != Activity.RESULT_OK) {
+			return@registerForActivityResult
+		}
+		val data = result.data ?: return@registerForActivityResult
+		@Suppress("DEPRECATION")
+		val updated = data.getParcelableExtra<AniListReview>(ReviewDetailActivity.EXTRA_RESULT_REVIEW)
+		if (updated != null) {
+			viewModel.updateReview(updated)
+		}
+		val deletedId = data.getLongExtra(ReviewDetailActivity.EXTRA_RESULT_DELETED_ID, 0L)
+		if (deletedId != 0L) {
+			viewModel.removeReview(deletedId)
+		}
+	}
 
 	private val loadMoreListener = object : RecyclerView.OnScrollListener() {
 		override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -128,6 +148,9 @@ class ReviewsSheet : BaseAdaptiveSheet<SheetReviewsBinding>() {
 				}
 			}
 		}
+		viewModel.openReviewDetails.observeEvent(viewLifecycleOwner) { nav ->
+			detailLauncher.launch(ReviewDetailActivity.createIntent(requireContext(), nav))
+		}
 	}
 
 	private fun renderState(binding: SheetReviewsBinding, state: ReviewUiState) {
@@ -184,14 +207,19 @@ class ReviewsSheet : BaseAdaptiveSheet<SheetReviewsBinding>() {
 	}
 
 	private fun showEditor(existing: AniListReview?) {
-		showReviewEditorDialog(
-			context = requireContext(),
-			scope = viewLifecycleOwner.lifecycleScope,
-			layoutInflater = layoutInflater,
-			existing = existing,
-			renderMarkdown = { body -> viewModel.renderMarkdown(body) },
-			onSubmit = { summary, body, score -> viewModel.submitReview(summary, body, score) },
-		)
+		viewLifecycleOwner.lifecycleScope.launch {
+			val draft = viewModel.loadDraft()
+			showReviewEditorDialog(
+				context = requireContext(),
+				scope = viewLifecycleOwner.lifecycleScope,
+				layoutInflater = layoutInflater,
+				existing = existing,
+				draft = draft,
+				renderMarkdown = { body -> viewModel.renderMarkdown(body) },
+				onSaveDraft = { summary, body, score -> viewModel.saveDraft(summary, body, score) },
+				onSubmit = { summary, body, score -> viewModel.submitReview(summary, body, score) },
+			)
+		}
 	}
 
 	private fun showDeleteConfirmation() {

@@ -5,6 +5,6 @@
 
 	<corners android:radius="4dp" />
 
-	<solid android:color="@color/bg_background_transparency" />
+	<solid android:color="@color/kotatsu_background_scrim" />
 
 </shape>

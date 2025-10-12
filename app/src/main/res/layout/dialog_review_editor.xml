@@ -103,6 +103,15 @@
 			app:iconGravity="textStart"
 			app:iconPadding="@dimen/list_spacing_small" />
 
+		<!-- Analist --> 
+		<com.google.android.material.button.MaterialButton
+			android:id="@+id/buttonSaveDraft"
+			style="?attr/materialButtonOutlinedStyle"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="@dimen/list_spacing_small"
+			android:text="@string/review_save_draft" />
+
 		<com.google.android.material.card.MaterialCardView
 			android:id="@+id/cardPreview"
 			android:layout_width="match_parent"

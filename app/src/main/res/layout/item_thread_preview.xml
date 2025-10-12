@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:gravity="center_horizontal"
+	android:orientation="vertical">
+
+	<com.google.android.material.card.MaterialCardView
+		android:id="@+id/cardThread"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginHorizontal="@dimen/list_spacing_large"
+		android:layout_marginTop="@dimen/list_spacing_small"
+		android:layout_marginBottom="@dimen/list_spacing_small"
+		app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+		app:cardCornerRadius="@dimen/m3_card_corner"
+		app:cardElevation="0dp"
+		app:strokeColor="?attr/colorOutlineVariant"
+		app:strokeWidth="1dp">
+
+		<androidx.constraintlayout.widget.ConstraintLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:minHeight="72dp"
+			android:paddingHorizontal="@dimen/list_spacing_large"
+			android:paddingVertical="@dimen/list_spacing_large">
+
+			<com.google.android.material.textview.MaterialTextView
+				android:id="@+id/textTitle"
+				style="?attr/textAppearanceTitleSmall"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:maxLines="2"
+				android:textColor="?attr/colorOnSurface"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toTopOf="parent"
+				tools:text="Chapter 1161 Discussion" />
+
+			<com.google.android.material.textview.MaterialTextView
+				android:id="@+id/textMeta"
+				style="?attr/textAppearanceBodyMedium"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/list_spacing_small"
+				android:ellipsize="end"
+				android:maxLines="1"
+				android:textColor="?attr/colorOnSurfaceVariant"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@id/textTitle"
+				tools:text="by Sakura • 42 replies" />
+
+			<com.google.android.material.textview.MaterialTextView
+				android:id="@+id/textTimestamp"
+				style="?attr/textAppearanceBodySmall"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/list_spacing_small"
+				android:textColor="?attr/colorOnSurfaceVariant"
+				app:layout_constraintBottom_toBottomOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@id/textMeta"
+				tools:text="Updated 5m ago" />
+
+			<com.google.android.material.chip.Chip
+				android:id="@+id/chipLocked"
+				style="@style/Widget.Kotatsu.Chip.Assist"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/list_spacing_small"
+				android:layout_marginEnd="@dimen/list_spacing_small"
+				android:text="@string/thread_locked"
+				android:visibility="gone"
+				app:chipIcon="@drawable/ic_lock"
+				app:chipIconTint="?attr/colorOnSurfaceVariant"
+				app:layout_constraintBaseline_toBaselineOf="@id/textTimestamp"
+				app:layout_constraintEnd_toEndOf="parent"
+				tools:visibility="visible" />
+
+		</androidx.constraintlayout.widget.ConstraintLayout>
+
+	</com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>

@@ -1,3 +1,4 @@
+
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 	<string name="app_name" translatable="false">Kotatsu</string>
@@ -886,74 +887,4 @@
 	<string name="chapters_load_failed">Failed to load chapter list</string>
 	<string name="telegram_integration">Telegram integration</string>
 	<string name="test_parser">Test manga source</string>
-
-	<!-- AniList Reviews -->
-	<string name="reviews">Reviews</string>
-	<string name="reviews_title">Reviews</string>
-	<string name="reviews_recent_header">Latest reviews</string>
-	<string name="reviews_view_more">View more reviews</string>
-	<string name="reviews_empty">No reviews yet</string>
-	<string name="review_detail_title">Review</string>
-	<string name="review_sign_in_required">Sign in to AniList to view community reviews.</string>
-	<string name="review_track_required">Track this manga on AniList to access reviews.</string>
-	<string name="review_write">Write review</string>
-	<string name="review_edit">Edit review</string>
-	<string name="review_delete">Delete</string>
-	<string name="review_delete_confirm">Delete review?</string>
-	<string name="review_delete_confirm_message">Are you sure you want to delete this review?</string>
-	<string name="review_saved">Review published</string>
-	<string name="review_deleted">Review deleted</string>
-	<string name="review_draft_saved">Draft saved</string>
-	<string name="review_rate_limited">AniList rate limit reached. Try again later.</string>
-	<string name="review_like_error">Unable to update vote</string>
-	<string name="review_save_draft">Save draft</string>
-	<string name="review_discard">Discard</string>
-	<string name="review_unsaved_changes_title">Save draft?</string>
-	<string name="review_unsaved_changes_message">You have unsaved changes. Save draft before closing?</string>
-	<string name="review_validation_summary">Summary must be at least %1$d characters.</string>
-	<string name="review_summary_length_error">Summary must be at most 120 characters.</string>
-	<string name="review_body_too_short">Review body must be at least 2200 characters.</string>
-	<string name="review_body_hint">Share your full review here.</string>
-	<string name="review_body_helper">Minimum 2200 characters. Markdown supported.</string>
-	<string name="review_summary_hint">Write a short summary.</string>
-	<string name="review_summary_helper">20-120 characters.</string>
-	<string name="review_preview_markdown">Preview markdown</string>
-	<string name="review_markdown_loading">Rendering preview...</string>
-	<string name="review_preview_error">Unable to render preview</string>
-	<string name="review_score_label">Score</string>
-	<string name="review_score_format">Score: %1$d / 100</string>
-	<string name="review_like">Like</string>
-	<string name="review_dislike">Dislike</string>
-	<string name="review_likes_count">Liked by %1$d users</string>
-
-	<!-- AniList Threads -->
-	<string name="threads_title">Threads</string>
-	<string name="threads_preview_title">Community preview</string>
-	<string name="threads_recent_header">Latest threads</string>
-	<string name="threads_view_more">View more threads</string>
-	<string name="threads_empty">No threads yet</string>
-	<string name="threads_sign_in_required">Sign in to AniList to view community threads.</string>
-	<string name="threads_track_required">Track this manga on AniList to access threads.</string>
-	<string name="threads">Threads</string>
-	<string name="thread_list_title_generic">Threads</string>
-	<string name="thread_list_title">Threads - %1$s</string>
-	<string name="thread_detail_title">Thread</string>
-	<string name="thread_meta_format">%1$s - %2$s</string>
-	<string name="thread_header_meta_format">%1$s - %2$s - %3$s</string>
-	<string name="thread_comment_meta_format">%1$s - %2$s</string>
-	<string name="thread_new">New thread</string>
-	<string name="thread_publish">Publish</string>
-	<string name="thread_reply">Reply</string>
-	<string name="thread_locked">Locked</string>
-	<string name="thread_body_hint">Share your reply...</string>
-	<string name="thread_title_hint">Thread title</string>
-	<string name="thread_validation_title">Enter a title.</string>
-	<string name="thread_validation_body">Enter your message.</string>
-	<string name="thread_created">Thread created</string>
-	<string name="thread_comment_posted">Reply posted</string>
-	<string name="thread_load_error">Unable to load thread.</string>
-	<string name="thread_comments_empty">No replies yet</string>
-	<string name="thread_sort_recent">Recent activity</string>
-	<string name="thread_sort_newest">Newest first</string>
-	<string name="thread_sort_replies">Most replies</string>
 </resources>

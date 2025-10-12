@@ -36,4 +36,9 @@
 		<item quantity="one">%1$d minute</item>
 		<item quantity="other">%1$d minutes</item>
 	</plurals>
+	<!-- AniList Reviews -->
+	<plurals name="thread_replies_count">
+		<item quantity="one">%1$d reply</item>
+		<item quantity="other">%1$d replies</item>
+	</plurals>
 </resources>

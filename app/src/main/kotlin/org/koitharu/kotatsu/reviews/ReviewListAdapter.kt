@@ -1,20 +1,23 @@
 package org.koitharu.kotatsu.reviews
 
 import android.text.format.DateUtils
-import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import androidx.core.text.HtmlCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.color.MaterialColors
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.databinding.ItemReviewBinding
+import kotlin.math.roundToInt
 
-class ReviewListAdapter : ListAdapter<AniListReview, ReviewViewHolder>(DiffCallback) {
+class ReviewListAdapter(
+	private val onItemClick: (AniListReview) -> Unit,
+) : ListAdapter<AniListReview, ReviewViewHolder>(DiffCallback) {
 
 	var viewerId: Long? = null
 
@@ -29,7 +32,11 @@ class ReviewListAdapter : ListAdapter<AniListReview, ReviewViewHolder>(DiffCallb
 	}
 
 	override fun onBindViewHolder(holder: ReviewViewHolder, position: Int) {
-		holder.bind(getItem(position), viewerId)
+		val review = getItem(position)
+		holder.bind(review, viewerId)
+		holder.itemView.setOnClickListener {
+			onItemClick(review)
+		}
 	}
 
 	companion object {
@@ -47,10 +54,6 @@ class ReviewViewHolder(
 	private val binding: ItemReviewBinding,
 ) : RecyclerView.ViewHolder(binding.root) {
 
-	private val linkMovementMethod by lazy(LazyThreadSafetyMode.NONE) {
-		LinkMovementMethod.getInstance()
-	}
-
 	fun bind(review: AniListReview, viewerId: Long?) = with(binding) {
 		imageAvatar.setImageAsync(review.user.avatar)
 		textName.text = review.user.name
@@ -61,9 +64,9 @@ class ReviewViewHolder(
 			DateUtils.FORMAT_ABBREV_RELATIVE,
 		)
 		textSummary.text = review.summary
-		val bodyContent = review.bodyHtml ?: review.body
-		textBody.text = androidx.core.text.HtmlCompat.fromHtml(bodyContent, androidx.core.text.HtmlCompat.FROM_HTML_MODE_COMPACT)
-		textBody.movementMethod = linkMovementMethod
+		val snippet = review.bodySnippet()
+		textBody.text = snippet
+		textBody.movementMethod = null
 		val scoreValue = review.score
 		if (scoreValue != null) {
 			textScore.isVisible = true
@@ -71,10 +74,10 @@ class ReviewViewHolder(
 		} else {
 			textScore.isGone = true
 		}
-		val ratingValue = review.rating
-		if (ratingValue != null && ratingValue > 0) {
+		val totalVotes = review.ratingAmount ?: 0
+		if (totalVotes > 0) {
 			textRating.isVisible = true
-			textRating.text = ratingValue.toString()
+			textRating.text = binding.root.context.getString(R.string.review_likes_count, totalVotes)
 		} else {
 			textRating.isGone = true
 		}
@@ -84,5 +87,25 @@ class ReviewViewHolder(
 		cardBubble.setCardBackgroundColor(
 			if (viewerId != null && review.user.id == viewerId) ownColor else defaultColor,
 		)
+	}
+
+	private fun AniListReview.bodySnippet(): CharSequence {
+		val plain = when {
+			body.isNotBlank() -> body
+			!bodyHtml.isNullOrBlank() -> HtmlCompat.fromHtml(bodyHtml, HtmlCompat.FROM_HTML_MODE_COMPACT).toString()
+			else -> ""
+		}
+		if (plain.isBlank()) {
+			return ""
+		}
+		return if (plain.length <= SNIPPET_LENGTH) {
+			plain
+		} else {
+			plain.take(SNIPPET_LENGTH - 1).trimEnd() + "…"
+		}
+	}
+
+	private companion object {
+		private const val SNIPPET_LENGTH = 220
 	}
 }

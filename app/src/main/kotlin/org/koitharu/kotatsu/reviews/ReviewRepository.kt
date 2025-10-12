@@ -14,12 +14,14 @@ import javax.inject.Singleton
 
 private const val FIRST_PAGE = 1
 private const val DEFAULT_PAGE_SIZE = 10
+private const val PREVIEW_PAGE_SIZE = 3
 
 @Singleton
 class ReviewRepository @Inject constructor(
 	private val client: AniListReviewClient,
 	private val database: MangaDatabase,
 	private val aniListScrobbler: AniListScrobbler,
+	private val draftStorage: ReviewDraftStorage,
 ) {
 
 	private var cachedMediaId: Int? = null
@@ -45,6 +47,14 @@ class ReviewRepository @Inject constructor(
 		)
 	}
 
+	suspend fun getReviewPreviews(access: ReviewAccess.Granted): List<AniListReview> {
+		return client.fetchReviews(
+			mediaId = access.mediaId,
+			page = FIRST_PAGE,
+			perPage = PREVIEW_PAGE_SIZE
+		).reviews
+	}
+
 	suspend fun refresh(access: ReviewAccess.Granted): ReviewFeed {
 		cachedMediaListId = access.mediaListId
 		return refreshInternal(access.mediaId, allowRetry = true)
@@ -66,7 +76,7 @@ class ReviewRepository @Inject constructor(
 			}
 			cachedPage = page.currentPage
 			cachedHasNext = page.hasNextPage
-			cachedReviews = page.reviews.toMutableList()
+			cachedReviews = page.reviews.map { it.withMediaId(mediaId) }.toMutableList()
 			Log.d(TAG, "Cached reviews size=${cachedReviews.size}")
 			cachedMyReview = try {
 				viewer?.let { user ->
@@ -107,10 +117,11 @@ class ReviewRepository @Inject constructor(
 		cachedPage = page.currentPage
 		cachedHasNext = page.hasNextPage
 		val myReviewId = cachedMyReview?.id
+		val entries = page.reviews.map { it.withMediaId(mediaId) }
 		if (myReviewId != null) {
-			cachedReviews.addAll(page.reviews.filterNot { it.id == myReviewId })
+			cachedReviews.addAll(entries.filterNot { it.id == myReviewId })
 		} else {
-			cachedReviews.addAll(page.reviews)
+			cachedReviews.addAll(entries)
 		}
 		return buildFeed()
 	}
@@ -121,6 +132,7 @@ class ReviewRepository @Inject constructor(
 		cachedMediaId = mediaId
 		removeReviewById(review.id)
 		cachedReviews.add(0, review)
+		clearDraftInternal(mediaId)
 		return refreshInternal(mediaId, allowRetry = true)
 	}
 
@@ -128,10 +140,57 @@ class ReviewRepository @Inject constructor(
 		client.deleteReview(reviewId)
 		removeReviewById(reviewId)
 		cachedMyReview = null
+		clearDraftInternal(mediaId)
 		return refreshInternal(mediaId, allowRetry = true)
 	}
 
+	suspend fun rateReview(reviewId: Long, rating: ReviewRating): AniListReview {
+		val mediaId = cachedMediaId
+		val fallback = cachedReviews.firstOrNull { it.id == reviewId }
+			?: cachedMyReview
+		val updated = client.rateReview(reviewId, rating, fallback).let {
+			if (mediaId != null) it.withMediaId(mediaId) else it
+		}
+		val normalized = fallback?.let { updated.normalizeVotes(it, rating) } ?: updated
+		val index = cachedReviews.indexOfFirst { it.id == reviewId }
+		if (index >= 0) {
+			cachedReviews[index] = normalized
+		}
+		if (cachedMyReview?.id == reviewId) {
+			cachedMyReview = normalized
+		}
+		return normalized
+	}
+
 	suspend fun renderMarkdown(markdown: String): String = client.renderMarkdown(markdown)
+
+	suspend fun saveDraft(mediaId: Int, summary: String, body: String, score: Int) {
+		val userId = ensureViewer()?.id ?: return
+		withContext(Dispatchers.IO) {
+			draftStorage.save(
+				ReviewDraft(
+					mediaId = mediaId,
+					userId = userId,
+					summary = summary,
+					body = body,
+					score = score,
+					lastEdited = System.currentTimeMillis(),
+				),
+			)
+		}
+	}
+
+	suspend fun loadDraft(mediaId: Int): ReviewDraft? {
+		val userId = ensureViewer()?.id ?: return null
+		return withContext(Dispatchers.IO) {
+			draftStorage.load(mediaId, userId)
+		}
+	}
+
+	suspend fun clearDraft(mediaId: Int) {
+		val userId = ensureViewer()?.id ?: return
+		clearDraftInternal(mediaId, userId)
+	}
 
 	private suspend fun ensureViewer(): AniListViewer? {
 		if (cachedViewer != null) {
@@ -140,6 +199,15 @@ class ReviewRepository @Inject constructor(
 		val viewer = client.fetchViewer()
 		cachedViewer = viewer
 		return viewer
+	}
+
+	private suspend fun clearDraftInternal(mediaId: Int) {
+		val userId = ensureViewer()?.id ?: return
+		clearDraftInternal(mediaId, userId)
+	}
+
+	private fun clearDraftInternal(mediaId: Int, userId: Long) {
+		draftStorage.clear(mediaId, userId)
 	}
 
 	private fun integrateMyReview() {
@@ -203,6 +271,23 @@ class ReviewRepository @Inject constructor(
 	companion object {
 		private const val TAG = "KotatsuReviews"
 	}
+
+	private fun AniListReview.withMediaId(mediaId: Int): AniListReview =
+		if (this.mediaId != 0) this else copy(mediaId = mediaId)
+
+	private fun AniListReview.normalizeVotes(previous: AniListReview, target: ReviewRating): AniListReview {
+		val prevVote = previous.userRating ?: ReviewRating.NO_VOTE
+		val prevTotal = previous.ratingAmount ?: 0
+		val newTotal = when (target) {
+			ReviewRating.UP_VOTE -> if (prevVote != ReviewRating.UP_VOTE) prevTotal + 1 else prevTotal
+			ReviewRating.NO_VOTE -> if (prevVote == ReviewRating.UP_VOTE) (prevTotal - 1).coerceAtLeast(0) else prevTotal
+			ReviewRating.DOWN_VOTE -> prevTotal
+		}
+		return copy(
+			ratingAmount = ratingAmount ?: newTotal,
+			userRating = if (target == ReviewRating.NO_VOTE) null else target,
+		)
+	}
 }
 
 sealed interface ReviewAccess {
@@ -219,4 +304,3 @@ data class ReviewFeed(
 	val viewer: AniListViewer?,
 	val myReview: AniListReview?,
 )
-

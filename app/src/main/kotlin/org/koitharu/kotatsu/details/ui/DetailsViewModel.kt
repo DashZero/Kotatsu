@@ -50,10 +50,16 @@ import org.koitharu.kotatsu.parsers.model.Manga
 import org.koitharu.kotatsu.parsers.util.findById
 import org.koitharu.kotatsu.parsers.util.runCatchingCancellable
 import org.koitharu.kotatsu.reader.ui.ReaderState
+import org.koitharu.kotatsu.reviews.AniListReview
+import org.koitharu.kotatsu.reviews.ReviewAccess
+import org.koitharu.kotatsu.reviews.ReviewRepository
 import org.koitharu.kotatsu.scrobbling.common.domain.Scrobbler
 import org.koitharu.kotatsu.scrobbling.common.domain.model.ScrobblingInfo
 import org.koitharu.kotatsu.scrobbling.common.domain.model.ScrobblingStatus
 import org.koitharu.kotatsu.stats.data.StatsRepository
+import org.koitharu.kotatsu.threads.AniListThread
+import org.koitharu.kotatsu.threads.ThreadAccess
+import org.koitharu.kotatsu.threads.ThreadRepository
 import javax.inject.Inject
 
 @HiltViewModel
@@ -73,6 +79,8 @@ class DetailsViewModel @Inject constructor(
 	private val progressUpdateUseCase: ProgressUpdateUseCase,
 	private val readingTimeUseCase: ReadingTimeUseCase,
 	statsRepository: StatsRepository,
+	private val threadRepository: ThreadRepository,
+	private val reviewRepository: ReviewRepository,
 ) : ChaptersPagesViewModel(
 	settings = settings,
 	interactor = interactor,
@@ -87,8 +95,26 @@ class DetailsViewModel @Inject constructor(
 	private var loadingJob: Job
 	val mangaId = intent.mangaId
 
+	private val _threadPreviews = MutableStateFlow<List<AniListThread>>(emptyList())
+	val threadPreviews: StateFlow<List<AniListThread>> = _threadPreviews
+
+	private val _reviewPreviews = MutableStateFlow<List<AniListReview>>(emptyList())
+	val reviewPreviews: StateFlow<List<AniListReview>> = _reviewPreviews
+
 	init {
 		mangaDetails.value = intent.manga?.let { MangaDetails(it) }
+
+		launchJob(Dispatchers.IO) {
+			val threadAccess = threadRepository.resolveAccess(mangaId)
+			if (threadAccess is ThreadAccess.Granted) {
+				_threadPreviews.value = threadRepository.getThreadPreviews(threadAccess)
+			}
+
+			val reviewAccess = reviewRepository.resolveAccess(mangaId)
+			if (reviewAccess is ReviewAccess.Granted) {
+				_reviewPreviews.value = reviewRepository.getReviewPreviews(reviewAccess)
+			}
+		}
 	}
 
 	val history = historyRepository.observeOne(mangaId)

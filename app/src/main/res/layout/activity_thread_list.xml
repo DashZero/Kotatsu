@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	tools:context="org.koitharu.kotatsu.threads.ThreadListActivity">
+
+	<com.google.android.material.appbar.AppBarLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:fitsSystemWindows="true"
+		app:liftOnScroll="true">
+
+		<com.google.android.material.appbar.MaterialToolbar
+			android:id="@+id/toolbar"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			app:titleTextColor="?attr/colorOnSurface" />
+
+	</com.google.android.material.appbar.AppBarLayout>
+
+	<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+		android:id="@+id/swipeRefresh"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
+
+		<FrameLayout
+			android:layout_width="match_parent"
+			android:layout_height="match_parent">
+
+			<androidx.recyclerview.widget.RecyclerView
+				android:id="@+id/recyclerThreads"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:clipToPadding="false"
+				android:paddingHorizontal="@dimen/margin_normal"
+				android:paddingTop="@dimen/margin_normal"
+				android:paddingBottom="@dimen/list_spacing_large"
+				tools:listitem="@layout/item_thread_preview" />
+
+			<TextView
+				android:id="@+id/textMessage"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center"
+				android:gravity="center"
+				android:padding="@dimen/list_spacing_large"
+				android:textAppearance="?attr/textAppearanceBodyMedium"
+				android:textColor="?attr/colorOnSurfaceVariant"
+				android:visibility="gone"
+				tools:text="No discussions yet"
+				tools:visibility="visible" />
+
+			<com.google.android.material.progressindicator.CircularProgressIndicator
+				android:id="@+id/progress"
+				style="@style/Widget.Material3.CircularProgressIndicator.Medium"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center"
+				android:visibility="gone"
+				tools:visibility="visible" />
+
+		</FrameLayout>
+
+	</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+	<com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+		android:id="@+id/fabNewThread"
+		style="@style/Widget.Material3.ExtendedFloatingActionButton.Surface"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="bottom|end"
+		android:layout_margin="@dimen/list_spacing_large"
+		android:text="@string/thread_new"
+		android:visibility="gone"
+		app:icon="@drawable/ic_add"
+		app:iconPadding="@dimen/grid_spacing"
+		app:iconTint="?attr/colorOnSecondaryContainer"
+		app:layout_anchorGravity="bottom|end"
+		tools:visibility="visible" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

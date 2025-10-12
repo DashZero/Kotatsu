@@ -77,7 +77,7 @@ class ChapterPagesMenuProvider(
 
 		R.id.action_reviews -> {
 			val manga = viewModel.getMangaOrNull() ?: return false
-			sheet.router.showReviews(manga)
+			// sheet.router.showReviews(manga)
 			true
 		}
 

@@ -1,56 +1,97 @@
-# Kotatsu Reviews
+# Kotatsu Reviews Module
 
-## What
+This package integrates AniList reviews into Kotatsu using the same MVVM + repository structure as
+the new threads feature. The notes below outline the module’s responsibilities, key entry points,
+and the small number of hooks into the core app so other contributors can work confidently without
+reverse‑engineering the whole flow.
 
-- Adds manga-level reviews powered by AniList GraphQL.
-- Reviews are fetched for tracked manga only; no chapter-level reviews are stored.
+---
 
-## Where
+## Architecture Overview
 
-- Entry point: Review action inside the Details → Chapters & Bookmarks bottom sheet.
-- UI: dedicated `ReviewsSheet` bottom sheet that follows Kotatsu’s chat-bubble visual language.
+```
+AniListReviewClient (GraphQL & mutations)
+          │
+          ▼
+ReviewRepository ── manages cached feed, viewer, drafts
+          │
+          ├── ReviewViewModel        (list + inline actions)
+          ├── ReviewDetailViewModel  (single review screen)
+          └── review editor dialog helpers
+```
 
-## How
+`ReviewViewModel` exposes a `ReviewUiState` (Loading, NotAuthorized, NotTracked, Content with paging)
+and forwards GraphQL calls through the repository. Mutations (save, delete, rate) bubble up as
+messages so the UI can surface snackbars without re‑fetching everything.
 
-- Endpoint: `POST https://graphql.anilist.co`.
-- Auth: reuses existing AniList OAuth token via `@ScrobblerType(ScrobblerService.ANILIST)` OkHttp client (Authorization: Bearer \<token\>).
-- Queries / Mutations:
-  - `ViewerShort` to resolve current user.
-  - `MediaReviews(mediaId, page, perPage)` for paginated reviews.
-  - `Review(mediaId, userId)` for the active user’s review.
-  - `SaveReview(mediaId, summary, body, score)` to create/update.
-  - `DeleteReview(id)` to remove.
-  - `Markdown(markdown)` to render optional Markdown preview.
-- Request variables follow AniList schema (`mediaId:Int`, `page:Int`, etc.); payloads are cached in memory per manga.
+---
 
-## When
+## Core Source Files
 
-- Pagination: page size 10, infinite scroll via `ReviewRepository.loadMore()`.
-- Refresh: pull-to-refresh or optimistic save/delete triggers a first-page refetch and resets cache.
-- Cache: in-memory per mediaId; invalidated on auth loss, save/delete, or manual refresh; not persisted across process death.
-- Offline: falls back to cached list when available; otherwise surfaces error toast.
+| Path | Purpose |
+| ---- | ------- |
+| `AniListReviewClient.kt` | Wraps AniList’s GraphQL endpoints used by Kotatsu: fetch reviews for a media, fetch viewer’s review, save/delete reviews, rate reviews, render markdown, resolve fallback media IDs. Handles rate limits transparently. |
+| `ReviewRepository.kt` | Caches review feed, viewer, media list IDs, and drafts. Provides APIs for refresh, pagination, save/delete, vote, and draft persistence. |
+| `ReviewViewModel.kt` | Backing logic for both the detail preview list and the dedicated sheet; owns `ReviewUiState` and message/event flows. |
+| `ReviewDetailViewModel.kt` | Powers the standalone `ReviewDetailActivity` screen (view a single review, vote, edit/delete). |
+| `ReviewDetailActivity.kt`, `ReviewUi.kt`, `ReviewEditorDialog.kt` | UI controllers: activity for full review view, `ReviewsSheet` bottom sheet for lists, and the markdown editor dialog with draft support. |
+| `ReviewDraftStorage.kt`, `ReviewDraft.kt` | Simple file-based storage for unsent reviews keyed by mediaId + userId. |
 
-## Why minimal core edits
+---
 
-- Core was only touched to expose the entry point and reuse existing scrobbling storage/token plumbing. All network, caching, and UI logic lives under `org.koitharu.kotatsu.reviews`.
+## Resources
 
-## Errors & Resiliency
+| File | Notes |
+| ---- | ----- |
+| `res/layout/sheet_reviews.xml` | Bottom sheet list layout (swipe refresh + recycler). |
+| `res/layout/item_review.xml` | Review list item with avatar, summary, body snippet, score, vote counts. |
+| `res/layout/activity_review_detail.xml` | Full review screen with markdown-rendered body, vote buttons, share/delete actions. |
+| `res/layout/dialog_review_editor.xml` | Markdown editor dialog shared between sheet and detail. |
+| `res/values/strings.xml` | Strings under the “ANILIST REVIEW” comment block cover copy for states, buttons, errors, markdown hints, etc. |
 
-- Token expiry / missing token → gated state with `review_sign_in_required`.
-- Manga not tracked → gated state with `review_track_required`.
-- Rate limiting (HTTP 429) → exponential backoff with contextual toast (`review_rate_limited`) and snackbar logging.
-- GraphQL validation errors → surfaced through existing `onError` observers; user input validated locally (summary/body length).
-- Network downtime (403/5xx) → error observer + retry affordances (pull-to-refresh).
-- Privacy: review payloads and tokens are never logged in release builds.
+---
 
-## Theming
+## Integration Points / Existing Modules Touching Reviews
 
-- Bubble colors reuse `colorSurfaceContainerHigh` / `colorPrimaryContainer` to stay consistent in light & dark themes.
-- Avatars respect existing `CoilImageView` corner shapes.
-- Action buttons use Material outlined styling to match bottom sheet affordances.
+| File | Reason |
+| ---- | ------ |
+| `details/ui/DetailsActivity.kt` | Hosts the preview list beneath “Community Preview”, handles “Write / Edit / Delete review” actions, and routes to detail sheet/activity. |
+| `res/layout/activity_details.xml` & `layout-w600dp-land/activity_details.xml` | Contain the preview RecyclerView + CTA buttons that are toggled based on `ReviewUiState`. |
+| `core/nav/AppRouter.kt` | Contains helpers (`showReviews`, `openReviewDetails`) for routing from activities/fragments to the review sheet / detail activity. |
+| `AndroidManifest.xml` | Registers `ReviewDetailActivity`. |
 
-## Touched Core Files
+No other core modules rely on reviews, but the pattern (repository + view model + bottom sheet)
+served as the template for the new threads feature.
 
-- `app/src/main/res/menu/opt_chapters.xml` & `opt_pages.xml` – added Reviews action.
-- `app/src/main/kotlin/org/koitharu/kotatsu/details/ui/pager/ChapterPagesMenuProvider.kt` – wired menu handler.
-- `app/src/main/kotlin/org/koitharu/kotatsu/core/nav/AppRouter.kt` – navigation hook into `ReviewsSheet`.
+---
+
+## Network & Auth Notes
+
+- Endpoint: `https://graphql.anilist.co`
+- Reviews reuse the OAuth token already stored for AniList tracking. If the token is missing or the
+  manga isn’t linked to AniList, the repository returns `ReviewAccess.NotAuthorized` or
+  `ReviewAccess.NotTracked` so the UI can show the correct messaging.
+- `ReviewRepository.resolveAccess` is the gatekeeper—always call it before trying to load data for a
+  manga so the fallback media ID logic remains consistent.
+- Markdown preview (`ReviewEditorDialog`) uses `AniListReviewClient.renderMarkdown`, which offloads
+  the conversion to AniList’s renderer.
+
+---
+
+## Hand-off Tips for New Contributors
+
+1. **Preview vs. Full List:** The same `ReviewViewModel` instance feeds both the inline list and the
+   full sheet. Keep state transitions idempotent and surface message events through the provided
+   `EventFlow`.
+2. **Drafts:** The editor dialog auto-saves drafts after a delay; if you change save behavior make
+   sure to respect `ReviewDraftStorage` so users don’t lose work.
+3. **Pagination:** `ReviewViewModel.loadMore()` relies on the repository’s cached page values. When
+   changing sort/order, reset the cache by calling `ReviewRepository.refresh`.
+4. **Voting:** The vote buttons call `ReviewRepository.rateReview`, which returns an updated review
+   snapshot. Update the adapter with that result to avoid refetching the whole page.
+5. **Localization:** All user-facing strings live together under the review section in
+   `strings.xml`. Add new copy there and avoid hard-coded text in Kotlin or layouts.
+
+Refer to this README together with the threads README if you plan to evolve both features—the stacks
+are deliberately parallel, so improvements can usually be ported from one module to the other with
+minimal friction.***

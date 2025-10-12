@@ -1,5 +1,6 @@
 package org.koitharu.kotatsu.reviews
 
+import android.os.Parcelable
 import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -16,6 +17,7 @@ import org.koitharu.kotatsu.scrobbling.common.domain.model.ScrobblerService
 import org.koitharu.kotatsu.scrobbling.common.domain.model.ScrobblerType
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.parcelize.Parcelize
 
 private const val ENDPOINT = "https://graphql.anilist.co"
 private val MEDIA_TYPE_JSON = "application/json; charset=utf-8".toMediaType()
@@ -98,11 +100,15 @@ class AniListReviewClient @Inject constructor(
 				query MyReviewSingle(${'$'}mediaId: Int!, ${'$'}userId: Int!) {
 					Review(mediaId: ${'$'}mediaId, userId: ${'$'}userId) {
 						id
+						mediaId
 						summary
 						bodyHtml: body(asHtml: true)
 						body
 						score
 						rating
+						ratingAmount
+						userRating
+						siteUrl
 						createdAt
 						user {
 							id
@@ -128,11 +134,15 @@ class AniListReviewClient @Inject constructor(
 				mutation SaveReview(${'$'}mediaId: Int!, ${'$'}summary: String!, ${'$'}body: String!, ${'$'}score: Int!) {
 					SaveReview(mediaId: ${'$'}mediaId, summary: ${'$'}summary, body: ${'$'}body, score: ${'$'}score) {
 						id
+						mediaId
 						summary
 						bodyHtml: body(asHtml: true)
 						body
 						score
 						rating
+						ratingAmount
+						userRating
+						siteUrl
 						createdAt
 						user {
 							id
@@ -152,6 +162,40 @@ class AniListReviewClient @Inject constructor(
 		)
 		val reviewObject = response.getJSONObject("data").getJSONObject("SaveReview")
 		return reviewObject.toReview()
+	}
+
+	suspend fun rateReview(reviewId: Long, rating: ReviewRating, fallback: AniListReview?): AniListReview {
+		val response = execute(
+			query = """
+				mutation RateReview(${'$'}id: Int!, ${'$'}rating: ReviewRating!) {
+					RateReview(reviewId: ${'$'}id, rating: ${'$'}rating) {
+						id
+						mediaId
+						summary
+						bodyHtml: body(asHtml: true)
+						body
+						score
+						rating
+						ratingAmount
+						userRating
+						siteUrl
+						createdAt
+						user {
+							id
+							name
+							avatar {
+								medium
+							}
+						}
+					}
+				}
+			""".trimIndent(),
+			variables = JSONObject()
+				.put("id", reviewId)
+				.put("rating", rating.graphQlValue),
+		)
+		val reviewObject = response.getJSONObject("data").getJSONObject("RateReview")
+		return reviewObject.toReview(fallback)
 	}
 
 	suspend fun deleteReview(reviewId: Long): Boolean {
@@ -290,17 +334,24 @@ class AniListReviewClient @Inject constructor(
 		avatar = optJSONObject("avatar")?.optString("medium"),
 	)
 
-	private fun JSONObject.toReview(): AniListReview = AniListReview(
-		id = getLong("id"),
-		summary = optString("summary").orEmpty(),
-		body = optString("body").orEmpty(),
-		bodyHtml = optString("bodyHtml", null)
-			?: optString("body", null),
-		score = optInt("score").takeIf { has("score") && !isNull("score") },
-		rating = optInt("rating").takeIf { has("rating") && !isNull("rating") },
-		createdAt = optLong("createdAt", 0L),
-		user = getJSONObject("user").toReviewer(),
-	)
+private fun JSONObject.toReview(fallback: AniListReview? = null): AniListReview = AniListReview(
+    id = getLong("id"),
+    mediaId = optInt("mediaId", fallback?.mediaId ?: 0),
+    summary = optString("summary", fallback?.summary.orEmpty()),
+    body = optString("body", fallback?.body.orEmpty()),
+    bodyHtml = optString("bodyHtml", null)
+        ?: optString("body", null)
+        ?: fallback?.bodyHtml,
+    score = optInt("score").takeIf { has("score") && !isNull("score") } ?: fallback?.score,
+    rating = optInt("rating").takeIf { has("rating") && !isNull("rating") } ?: fallback?.rating,
+    ratingAmount = optInt("ratingAmount").takeIf { has("ratingAmount") && !isNull("ratingAmount") }
+        ?: fallback?.ratingAmount,
+    userRating = ReviewRating.fromValue(optString("userRating", null)) ?: fallback?.userRating,
+    siteUrl = optString("siteUrl", fallback?.siteUrl),
+    createdAt = optLong("createdAt", fallback?.createdAt ?: 0L),
+    user = optJSONObject("user")?.toReviewer() ?: fallback?.user
+        ?: AniListReviewer(id = 0, name = "", avatar = null),
+)
 
 	private fun JSONObject.toReviewer() = AniListReviewer(
 		id = getLong("id"),
@@ -321,22 +372,47 @@ class AniListReviewClient @Inject constructor(
 	}
 }
 
+@Parcelize
 data class AniListReviewer(
 	val id: Long,
 	val name: String,
 	val avatar: String?,
-)
+) : Parcelable
 
+@Parcelize
 data class AniListReview(
 	val id: Long,
+	val mediaId: Int,
 	val summary: String,
 	val body: String,
 	val bodyHtml: String?,
 	val score: Int?,
 	val rating: Int?,
+	val ratingAmount: Int?,
+	val userRating: ReviewRating?,
+	val siteUrl: String?,
 	val createdAt: Long,
 	val user: AniListReviewer,
-)
+) : Parcelable
+
+@Parcelize
+enum class ReviewRating(val graphQlValue: String) : Parcelable {
+	UP_VOTE("UP_VOTE"),
+	DOWN_VOTE("DOWN_VOTE"),
+	NO_VOTE("NO_VOTE");
+
+	companion object {
+		fun fromValue(value: String?): ReviewRating? {
+			return when (value) {
+				null, "", "null" -> null
+				"UP_VOTE" -> UP_VOTE
+				"DOWN_VOTE" -> DOWN_VOTE
+				"NO_VOTE" -> NO_VOTE
+				else -> null
+			}
+		}
+	}
+}
 
 data class ReviewPage(
 	val reviews: List<AniListReview>,

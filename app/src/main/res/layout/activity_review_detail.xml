@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:background="?attr/colorSurface"
+	tools:context="org.koitharu.kotatsu.reviews.ReviewDetailActivity">
+
+	<androidx.core.widget.NestedScrollView
+		android:id="@+id/scrollView"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:clipToPadding="false"
+		android:padding="@dimen/screen_padding"
+		app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:gravity="center_horizontal"
+			android:layout_marginBottom="@dimen/screen_padding"
+			android:orientation="vertical">
+
+			<LinearLayout
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="@dimen/list_spacing_large"
+				android:gravity="center_vertical"
+				android:orientation="horizontal">
+
+				<org.koitharu.kotatsu.core.image.CoilImageView
+					android:id="@+id/imageAvatar"
+					android:layout_width="56dp"
+					android:layout_height="56dp"
+					android:contentDescription="@string/reviews_title"
+					app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Circle"
+					app:strokeWidth="0dp"
+					tools:src="@tools:sample/avatars" />
+
+				<LinearLayout
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="@dimen/list_spacing_large"
+					android:orientation="vertical">
+
+					<com.google.android.material.textview.MaterialTextView
+						android:id="@+id/textAuthor"
+						style="?attr/textAppearanceTitleMedium"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:textStyle="bold"
+						tools:text="Sakura" />
+
+					<com.google.android.material.textview.MaterialTextView
+						android:id="@+id/textTimestamp"
+						style="?attr/textAppearanceBodySmall"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:textColor="?attr/colorOnSurfaceVariant"
+						tools:text="18 hours ago" />
+
+				</LinearLayout>
+
+			</LinearLayout>
+
+			<com.google.android.material.card.MaterialCardView
+				android:id="@+id/cardContent"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:maxWidth="@dimen/reviews_content_max_width"
+				app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
+				app:cardCornerRadius="@dimen/m3_card_corner"
+				app:cardElevation="0dp"
+				app:strokeWidth="0dp">
+
+				<LinearLayout
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:orientation="vertical"
+					android:paddingStart="@dimen/list_spacing_large"
+					android:paddingTop="@dimen/list_spacing_large"
+					android:paddingEnd="@dimen/list_spacing_large"
+					android:paddingBottom="@dimen/list_spacing_large">
+
+					<com.google.android.material.textview.MaterialTextView
+						android:id="@+id/textSummary"
+						style="?attr/textAppearanceTitleMedium"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:textStyle="bold"
+						tools:text="Fantastic pacing and art" />
+
+					<com.google.android.material.textview.MaterialTextView
+						android:id="@+id/textBody"
+						style="?attr/textAppearanceBodyMedium"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:layout_marginTop="@dimen/list_spacing_small"
+						android:textColor="?attr/colorOnSurface"
+						tools:text="Full review body rendered as HTML will appear here." />
+
+				</LinearLayout>
+
+			</com.google.android.material.card.MaterialCardView>
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/list_spacing_large"
+				android:gravity="center_vertical"
+				android:maxWidth="@dimen/reviews_content_max_width"
+				android:orientation="horizontal">
+
+				<com.google.android.material.textview.MaterialTextView
+					android:id="@+id/textScore"
+					style="?attr/textAppearanceLabelMedium"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:drawableStart="@drawable/ic_star_small"
+					android:drawablePadding="@dimen/list_spacing_small"
+					tools:text="80/100" />
+
+			<com.google.android.material.textview.MaterialTextView
+				android:id="@+id/textRating"
+				style="?attr/textAppearanceLabelMedium"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginStart="@dimen/list_spacing_large"
+				android:drawableStart="@drawable/ic_heart_outline"
+				android:drawablePadding="@dimen/list_spacing_small"
+				android:textColor="?attr/colorOnSurfaceVariant"
+				tools:text="168 out of 187 users liked this review" />
+
+			</LinearLayout>
+
+			<com.google.android.material.button.MaterialButtonToggleGroup
+				android:id="@+id/groupRating"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/list_spacing_large"
+				android:maxWidth="@dimen/reviews_content_max_width"
+				app:singleSelection="true">
+
+				<com.google.android.material.button.MaterialButton
+					android:id="@+id/buttonLike"
+					style="@style/Widget.Material3.Button.OutlinedButton"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:text="@string/review_like" />
+
+				<com.google.android.material.button.MaterialButton
+					android:id="@+id/buttonDislike"
+					style="@style/Widget.Material3.Button.OutlinedButton"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="@dimen/list_spacing_small"
+					android:text="@string/review_dislike" />
+
+			</com.google.android.material.button.MaterialButtonToggleGroup>
+
+			<LinearLayout
+				android:id="@+id/actionsOwner"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/list_spacing_large"
+				android:gravity="center_horizontal"
+				android:maxWidth="@dimen/reviews_content_max_width"
+				android:orientation="horizontal">
+
+				<com.google.android.material.button.MaterialButton
+					android:id="@+id/buttonEdit"
+					style="@style/Widget.Material3.Button.TonalButton"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:text="@string/review_edit" />
+
+				<com.google.android.material.button.MaterialButton
+					android:id="@+id/buttonDelete"
+					style="@style/Widget.Material3.Button.TextButton"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="@dimen/list_spacing_small"
+					android:text="@string/review_delete" />
+
+			</LinearLayout>
+
+		</LinearLayout>
+
+	</androidx.core.widget.NestedScrollView>
+
+	<com.google.android.material.progressindicator.CircularProgressIndicator
+		android:id="@+id/progress"
+		style="@style/Widget.Material3.CircularProgressIndicator.Small"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center"
+		android:visibility="gone" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
