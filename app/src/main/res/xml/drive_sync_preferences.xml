@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/pref_header_google_drive_sync">
+
+        <Preference
+            android:key="drive_connect_account"
+            android:title="@string/pref_title_connect_google_drive"
+            android:summary="@string/pref_summary_connect_google_drive_disconnected"
+            android:icon="@drawable/ic_google_drive_logo" />
+
+        <SwitchPreferenceCompat
+            android:key="drive_auto_sync_enabled"
+            android:title="@string/pref_title_auto_sync"
+            android:summary="@string/pref_summary_auto_sync"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_sync_auto"
+            android:dependency="drive_connect_account" />
+
+        <Preference
+            android:key="drive_sync_now"
+            android:title="@string/pref_title_sync_now"
+            android:summary="@string/pref_summary_sync_now"
+            android:icon="@drawable/ic_sync_now"
+            android:dependency="drive_connect_account" />
+
+        <Preference
+            android:key="drive_last_synced"
+            android:title="@string/pref_title_last_synced"
+            android:summary="@string/pref_summary_never_synced"
+            android:icon="@drawable/ic_history"
+            android:selectable="false" />
+
+        <Preference
+            android:key="drive_sync_status"
+            android:title="@string/pref_title_sync_status"
+            android:summary="@string/pref_summary_sync_status_idle"
+            android:icon="@drawable/ic_info"
+            android:selectable="false" />
+
+        <Preference
+            android:key="drive_logout"
+            android:title="@string/pref_title_logout_google_drive"
+            android:summary="@string/pref_summary_logout_google_drive"
+            android:icon="@drawable/ic_logout"
+            android:dependency="drive_connect_account" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

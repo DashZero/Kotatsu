@@ -73,6 +73,9 @@ import javax.inject.Inject
 private const val BOUNDS_PAGE_OFFSET = 2
 private const val PREFETCH_LIMIT = 10
 
+import org.koitharu.kotatsu.gdrive.SyncRegistry
+import org.koitharu.kotatsu.gdrive.models.SyncEvent
+
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
 	private val savedStateHandle: SavedStateHandle,
@@ -93,6 +96,7 @@ class ReaderViewModel @Inject constructor(
 	deleteLocalMangaUseCase: DeleteLocalMangaUseCase,
 	downloadScheduler: DownloadWorker.Scheduler,
 	readerSettingsProducerFactory: ReaderSettings.Producer.Factory,
+	private val syncRegistry: SyncRegistry,
 ) : ChaptersPagesViewModel(
 	settings = settings,
 	interactor = interactor,
@@ -249,6 +253,7 @@ class ReaderViewModel @Inject constructor(
 			readerState = readerState,
 			percent = computePercent(readerState.chapterId, readerState.page),
 		)
+		syncRegistry.sendEvent(SyncEvent.PageChanged)
 	}
 
 	fun getCurrentState() = readingState.value
@@ -368,6 +373,7 @@ class ReaderViewModel @Inject constructor(
 				val manga = requireManga()
 				bookmarksRepository.removeBookmark(manga.id, state.chapterId, state.page)
 				onShowToast.call(R.string.bookmark_removed)
+                syncRegistry.sendEvent(SyncEvent.BookmarkRemoved(manga.id.toString()))
 			} else {
 				val page = checkNotNull(getCurrentPage()) { "Page not found" }
 				val bookmark = Bookmark(
@@ -382,6 +388,7 @@ class ReaderViewModel @Inject constructor(
 				)
 				bookmarksRepository.addBookmark(bookmark)
 				onShowToast.call(R.string.bookmark_added)
+                syncRegistry.sendEvent(SyncEvent.BookmarkAdded(bookmark.manga.id.toString()))
 			}
 		}
 	}

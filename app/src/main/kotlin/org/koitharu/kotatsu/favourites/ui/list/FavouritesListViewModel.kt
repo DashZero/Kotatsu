@@ -43,6 +43,9 @@ import javax.inject.Inject
 
 private const val PAGE_SIZE = 16
 
+import org.koitharu.kotatsu.gdrive.SyncRegistry
+import org.koitharu.kotatsu.gdrive.models.SyncEvent
+
 @HiltViewModel
 class FavouritesListViewModel @Inject constructor(
 	savedStateHandle: SavedStateHandle,
@@ -52,6 +55,7 @@ class FavouritesListViewModel @Inject constructor(
 	quickFilterFactory: FavoritesListQuickFilter.Factory,
 	settings: AppSettings,
 	mangaDataRepository: MangaDataRepository,
+	private val syncRegistry: SyncRegistry,
 ) : MangaListViewModel(settings, mangaDataRepository), QuickFilterListener {
 
 	val categoryId: Long = savedStateHandle[AppRouter.KEY_ID] ?: NO_ID
@@ -117,6 +121,7 @@ class FavouritesListViewModel @Inject constructor(
 				repository.removeFromCategory(categoryId, ids)
 			}
 			onActionDone.call(ReversibleAction(R.string.removed_from_favourites, handle))
+            ids.forEach { syncRegistry.sendEvent(SyncEvent.FavoriteRemoved(it.toString())) }
 		}
 	}
 

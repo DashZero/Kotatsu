@@ -61,7 +61,8 @@ android {
 		resources {
 			excludes += [
 				'META-INF/README.md',
-				'META-INF/NOTICE.md'
+				'META-INF/NOTICE.md',
+                'META-INF/DEPENDENCIES'
 			]
 		}
 	}
@@ -130,6 +131,18 @@ dependencies {
 	implementation libs.kotlin.stdlib
 	implementation libs.kotlinx.coroutines.android
 	implementation libs.kotlinx.coroutines.guava
+
+    // START: ADDED FOR GOOGLE DRIVE SYNC
+    implementation 'com.google.android.gms:play-services-auth:21.0.0'
+    implementation 'com.google.apis:google-api-services-drive:v3-rev20230306-2.0.0'
+    implementation 'com.google.api-client:google-api-client-android:1.23.0'
+    implementation('com.google.api-client:google-api-client-gson:1.23.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
+    implementation 'com.google.http-client:google-http-client-gson:1.42.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    // END: ADDED FOR GOOGLE DRIVE SYNC
 
 	implementation libs.androidx.appcompat
 	implementation libs.androidx.core

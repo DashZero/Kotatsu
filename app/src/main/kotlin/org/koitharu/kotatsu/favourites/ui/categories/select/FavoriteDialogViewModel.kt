@@ -28,11 +28,15 @@ import org.koitharu.kotatsu.list.ui.model.ListModel
 import org.koitharu.kotatsu.list.ui.model.LoadingState
 import javax.inject.Inject
 
+import org.koitharu.kotatsu.gdrive.SyncRegistry
+import org.koitharu.kotatsu.gdrive.models.SyncEvent
+
 @HiltViewModel
 class FavoriteDialogViewModel @Inject constructor(
 	savedStateHandle: SavedStateHandle,
 	private val favouritesRepository: FavouritesRepository,
 	settings: AppSettings,
+	private val syncRegistry: SyncRegistry,
 ) : BaseViewModel() {
 
 	val manga = savedStateHandle.require<List<ParcelableManga>>(AppRouter.KEY_MANGA_LIST).map {
@@ -53,8 +57,10 @@ class FavoriteDialogViewModel @Inject constructor(
 		launchJob(Dispatchers.Default) {
 			if (isChecked) {
 				favouritesRepository.addToCategory(categoryId, manga)
+                manga.forEach { syncRegistry.sendEvent(SyncEvent.FavoriteAdded(it.id.toString())) }
 			} else {
 				favouritesRepository.removeFromCategory(categoryId, manga.ids())
+                manga.forEach { syncRegistry.sendEvent(SyncEvent.FavoriteRemoved(it.id.toString())) }
 			}
 			refreshTrigger.value = Any()
 		}

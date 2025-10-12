@@ -36,7 +36,15 @@
 		android:fragment="org.koitharu.kotatsu.settings.DownloadsSettingsFragment"
 		android:icon="@drawable/ic_download"
 		android:key="downloads"
-		android:title="@string/downloads" />
+		android.title="@string/downloads" />
+
+	<!-- GOOGLE DRIVE SYNC -->
+    <PreferenceScreen
+        android:fragment="org.koitharu.kotatsu.gdrive.ui.DriveSyncSettingsFragment"
+        android:icon="@drawable/ic_cloud_sync"
+        android:key="cloud_sync"
+        android:title="@string/pref_header_cloud_sync"
+        android:summary="@string/pref_summary_cloud_sync_status"/>
 
 	<PreferenceScreen
 		android:fragment="org.koitharu.kotatsu.settings.tracker.TrackerSettingsFragment"

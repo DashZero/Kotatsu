@@ -879,4 +879,38 @@
 	<string name="no_chapters_in_manga">This manga does not contain any chapters</string>
 	<string name="chapters_load_failed">Failed to load chapter list</string>
 	<string name="telegram_integration">Telegram integration</string>
+
+		<!-- START: ADDED FOR GOOGLE DRIVE SYNC -->
+    <string name="pref_header_cloud_sync">Cloud Sync</string>
+    <string name="pref_title_connect_google_drive">Connect to Google Drive</string>
+    <string name="pref_summary_connect_google_drive_disconnected">Sign in to sync your data</string>
+    <string name="pref_summary_connect_google_drive_connected">Connected as %1$s</string>
+    <string name="pref_title_auto_sync">Auto Sync</string>
+    <string name="pref_summary_auto_sync">Automatically sync data in the background</string>
+    <string name="pref_title_sync_now">Sync Now</string>
+    <string name="pref_summary_sync_now">Manually trigger data synchronization</string>
+    <string name="pref_title_last_synced">Last Synced</string>
+    <string name="pref_summary_never_synced">Never synced</string>
+    <string name="pref_summary_last_synced_at">Last synced: %1$s</string>
+    <string name="pref_title_sync_status">Sync Status</string>
+    <string name="pref_summary_sync_status_idle">Idle</string>
+    <string name="pref_title_logout_google_drive">Log Out from Google Drive</string>
+    <string name="pref_summary_logout_google_drive">Disconnect your Google Drive account</string>
+
+    <!-- Toasts/Snackbars for User Feedback -->
+    <string name="sync_toast_sync_started">Sync started…</string>
+    <string name="sync_toast_sync_successful">Sync completed successfully!</string>
+    <string name="sync_toast_sync_failed">Sync failed: %1$s</string>
+    <string name="sync_toast_sign_in_failed">Google Sign-In failed.</string>
+    <string name="sync_toast_not_connected">Not connected to Google Drive.</string>
+    <string name="sync_toast_logged_out">Logged out from Google Drive.</string>
+    <string name="sync_toast_network_error">Network error. Please check your connection.</string>
+    <string name="sync_toast_google_api_not_connected">Google API not connected. Please reconnect.</string>
+    <string name="sync_toast_google_api_resolution_required">User action required to resolve Google Drive issue.</string>
+    <string name="sync_toast_google_api_timeout">Connection timed out with Google Drive.</string>
+    <string name="sync_toast_data_corruption">Sync failed: Corrupted sync data detected. Try logging out and back in.</string>
+    <string name="sync_toast_unknown_error">Sync failed: An unexpected error occurred.</string>
+    <string name="sync_toast_drive_not_initialized">Google Drive service not initialized.</string>
+    <string name="sync_toast_sign_out_error">Error signing out: %1$s</string>
+    <!-- END: ADDED FOR GOOGLE DRIVE SYNC -->
 </resources>
