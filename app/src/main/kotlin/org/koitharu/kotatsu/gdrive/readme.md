@@ -1,102 +1,73 @@
 # Google Drive Sync Module for Kotatsu
 
-This module introduces a modular, server-less cloud synchronization system for Kotatsu, leveraging Google Drive's AppData folder to sync user data across multiple devices. It is designed to be as independent as possible, with minimal intrusion into the core application logic.
+This document details a modular, server-less cloud synchronization system for Kotatsu, leveraging Google Drive's AppData folder. It was integrated into the existing project with a focus on modularity and minimal intrusion into core application logic.
 
 ## 🎯 Objectives
 
-* **Seamless Multi-Device Sync:** Automatically and manually sync user data (reading history, bookmarks, favorites, settings, library metadata) via Google Drive.
-* **Modular Integration:** Implemented as an isolated module (`DriveSyncProvider`) under a `SyncProvider` abstraction, registered with a global `SyncRegistry`.
-* **Privacy & Security:** Utilizes Google Drive's AppData folder (`drive.appdata`) for non-user-visible storage and encrypts all sync data using Android Keystore AES.
-* **Full Data Coverage:** Syncs all specified data types into a single, encrypted `kotatsu_sync.encrypted` JSON file.
-* **Offline Support:** Queues changes when offline and syncs upon reconnection.
-* **Conflict Resolution:** Uses timestamp-based logic ("newer wins") for data merging.
+*   **Seamless Multi-Device Sync:** Automatically and manually sync reading history, bookmarks, favorites, settings, and library metadata.
+*   **Modular Integration:** Implemented via a `SyncProvider` interface, with `DriveSyncProvider` as the Google Drive implementation.
+*   **Privacy & Security:** Uses Google Drive's AppData folder (`drive.appdata`) and encrypts all data at rest using AES via the Android Keystore.
+*   **Offline Support:** Caches local changes and syncs them upon reconnection.
+*   **Conflict Resolution:** Employs a timestamp-based "newer wins" logic for merging data.
 
-## ⚙️ Technical Overview
+## ⚙️ File Manifest
 
-The sync system is built around the `SyncProvider` interface, allowing for potential future integration of other sync services. `DriveSyncProvider` is the concrete implementation for Google Drive.
-
-### Data Flow
-
-1. **Local Changes:** User actions (e.g., reading progress, adding bookmarks) trigger `SyncEvent`s which are sent to the `SyncRegistry`.
-2. **`DriveSyncProvider`:** Catches `SyncEvent`s and marks internal state as "dirty".
-3. **Sync Trigger:** `syncNow()` can be called manually (from UI), automatically (on app startup/resume), or periodically (via `WorkManager`).
-4. **Network Check:** Verifies internet connectivity.
-5. **Google Sign-In:** Authenticates the user silently or interactively.
-6. **File Management:**
-    * Locates `kotatsu_sync.encrypted` in Google Drive AppData folder.
-    * Creates the file if it doesn't exist.
-7. **Download & Decrypt:** Downloads the encrypted file, decrypts it using Android Keystore, and parses it into `SyncData`.
-8. **Collect Local Data:** Gathers the latest data from local repositories (reading history, bookmarks, etc.) into a `SyncData` object.
-9. **Merge:** Compares remote and local `SyncData` using timestamp-based conflict resolution, creating a `mergedData` object.
-10. **Encrypt & Upload:** If changes are detected in `mergedData` or there were unsynced local changes, the `mergedData` is encrypted (AES via Android Keystore), Base64-encoded, and uploaded back to Google Drive. The IV (Initialization Vector) is stored as a custom property of the Drive file.
-11. **UI Update:** Updates UI elements (last sync time, status messages) via `StateFlow`s.
-
-## 🗄️ Module Structure & Files
-
-The core files for this module are located under `app/src/main/kotlin/org/koitharu/kotatsu/gdrive/`.
+The following files were created or modified to implement this feature.
 
 ### ➕ New Files Created
 
-1. **`gdrive/SyncProvider.kt`**: Interface for generic sync providers.
-2. **`gdrive/SyncRegistry.kt`**: Singleton object to manage and coordinate multiple `SyncProvider` instances.
-3. **`gdrive/EncryptionUtil.kt`**: Utility class for AES encryption/decryption using Android Keystore.
-4. **`gdrive/InstantAdapter.kt`**: Custom Gson `TypeAdapter` for `java.time.Instant`.
-5. **`gdrive/DriveSyncProvider.kt`**: The concrete implementation of `SyncProvider` for Google Drive. Handles authentication, Drive API interaction, encryption, and data merging.
-6. **`gdrive/DriveSyncWorker.kt`**: A `CoroutineWorker` for performing periodic background syncs using WorkManager.
-7. **`gdrive/models/SyncEvent.kt`**: Sealed class defining various events that trigger sync actions (e.g., `PageChanged`, `BookmarkAdded`).
-8. **`gdrive/models/SyncItem.kt`**: Data classes defining the structure of individual syncable items (e.g., `ReadingHistoryItem`).
-9. **`gdrive/models/SyncData.kt`**: The main data class representing the entire `kotatsu_sync.encrypted` JSON schema.
-10. **`gdrive/ui/DriveSyncSettingsFragment.kt`**: A `PreferenceFragmentCompat` that provides the user interface for managing Google Drive sync settings.
-11. **`data/MockRepositories.kt`**: (Temporary for development) Interfaces and mock implementations for `IReadingHistoryRepository`, `IBookmarkRepository`, `IFavoriteRepository`, `IAppSettings`, `ILibraryRepository`. **These must be replaced with actual Kotatsu repository implementations.**
-12. **`app/src/main/res/xml/drive_sync_preferences.xml`**: XML layout for the `DriveSyncSettingsFragment` UI.
-13. **`app/src/main/res/values/strings.xml`**: New string resources for sync-related UI and messages.
-14. **`app/src/main/res/drawable/*.xml`**: Placeholder drawable assets (e.g., `ic_google_drive_logo.xml`, `ic_sync_auto.xml`, `ic_sync_now.xml`, `ic_history.xml`, `ic_info.xml`, `ic_logout.xml`, `ic_cloud_sync.xml`). **These should be replaced with proper Material Design icons or app-specific assets.**
+The core logic and UI of the sync module reside in these new files:
+
+**Core Logic (`app/src/main/kotlin/org/koitharu/kotatsu/`):**
+*   `gdrive/SyncProvider.kt`: The primary interface for any sync provider.
+*   `gdrive/SyncRegistry.kt`: A singleton to manage and dispatch sync events.
+*   `gdrive/DriveSyncProvider.kt`: The main implementation for Google Drive sync, handling authentication, API calls, data merging, and encryption.
+*   `gdrive/DriveSyncWorker.kt`: The `WorkManager` worker for periodic background synchronization.
+*   `gdrive/EncryptionUtil.kt`: A utility for AES encryption/decryption using Android Keystore.
+*   `gdrive/InstantAdapter.kt`: A custom Gson `TypeAdapter` for `java.time.Instant`.
+*   `gdrive/models/SyncEvent.kt`: Defines events that trigger sync actions (e.g., `PageChanged`).
+*   `gdrive/models/SyncItem.kt`: Defines the data structure for syncable items (e.g., `ReadingHistoryItem`).
+*   `gdrive/models/SyncData.kt`: Defines the complete JSON schema for the `kotatsu_sync.encrypted` file.
+*   `di/AppModule.kt`: A Hilt module to provide dependencies like `DriveSyncProvider` and mock repositories.
+*   `KotatsuApp.kt`: A custom `Application` class, required for Hilt and custom WorkManager initialization.
+
+**UI & Resources:**
+*   `gdrive/ui/DriveSyncSettingsFragment.kt`: The settings screen fragment for managing sync.
+*   `res/xml/drive_sync_preferences.xml`: The XML layout for the sync settings screen.
+*   `res/drawable/ic_cloud_sync.xml`: Icon for the main settings entry.
+*   `res/drawable/ic_google_drive_logo.xml`: Logo for the "Connect" button.
+*   `res/drawable/ic_sync_auto.xml`: Icon for the auto-sync toggle.
+*   `res/drawable/ic_sync_now.xml`: Icon for the "Sync Now" button.
+*   `res/drawable/ic_history.xml`: Icon for the "Last Synced" preference.
+*   `res/drawable/ic_info.xml`: Icon for the "Sync Status" preference.
+*   `res/drawable/ic_logout.xml`: Icon for the "Logout" button.
+
+**Developer Placeholders:**
+*   `data/MockRepositories.kt`: **Temporary mock implementations** for data repositories. These **must be replaced** with actual Kotatsu repository implementations in `di/AppModule.kt`.
 
 ### 📝 Modified Core Files
 
-To integrate this module, the following existing core Kotatsu files were minimally modified:
+To integrate the module, the following existing files were modified:
 
-1. **`app/src/main/AndroidManifest.xml`**:
-    * Added `<activity android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity" ... />` for Google Sign-In.
-    * Added `INTERNET` and `ACCESS_NETWORK_STATE` permissions.
-    * Updated `<application android:name=".KotatsuApp" ... />` to point to the new custom `Application` class.
-2. **`app/src/main/kotlin/org/koitharu/kotatsu/KotatsuApp.kt`**:
-    * Created (if not existing) or modified to extend `Application` and implement `Configuration.Provider`.
-    * Annotated with `@HiltAndroidApp`.
-    * Injected `DriveSyncProvider` and `HiltWorkerFactory`.
-    * Registered `driveSyncProvider` with `SyncRegistry` in `onCreate()`.
-    * Provided `WorkManager` configuration using `HiltWorkerFactory`.
-3. **`app/src/main/kotlin/org/koitharu/kotatsu/di/AppModule.kt`**:
-    * Updated to provide `EncryptionUtil`, `DriveSyncProvider`, and the `MockRepository` implementations.
-    * **Crucially, this is where you will swap out the `MockRepository` providers with your actual Kotatsu repository implementations.**
-4. **`app/src/main/res/xml/preferences.xml`**: (Your main settings XML)
-    * Added a `<Preference app:fragment="org.koitharu.kotatsu.gdrive.ui.DriveSyncSettingsFragment" ... />` entry to navigate to the new `DriveSyncSettingsFragment`.
-    * Added `pref_summary_cloud_sync_status` string to `strings.xml`.
-5. **Kotatsu Core Data Modifying Classes**: (Examples, *not directly modified by AI output, but require manual integration*)
-    * Any `ViewModel`, `Manager`, or `Repository` classes that modify reading history, bookmarks, favorites, settings, or library metadata will need to:
-        * Inject `SyncRegistry`.
-        * Call `SyncRegistry.sendEvent(SyncEvent.<AppropriateEvent>)` after a successful local data modification.
-        * Examples include classes handling `ReaderViewModel.saveReadingProgress()`, `DetailsViewModel.addBookmark()`, `AppSettings.setTheme()`, `LibraryManager.addSource()`, etc.
+1.  **`app/build.gradle` (Module: app):**
+    *   Added `implementation` lines for Google Play Services Auth, Google Drive API, Gson, Hilt-WorkManager, and Kotlin Coroutines Play Services.
+    *   Added a `packagingOptions` block to `android` to exclude duplicate `META-INF/` files from dependencies.
 
-## 🛠️ Integration Steps for the Developer
+2.  **`app/src/main/AndroidManifest.xml`:**
+    *   Set `android:name=".KotatsuApp"` on the `<application>` tag.
+    *   Added `<uses-permission>` for `INTERNET` and `ACCESS_NETWORK_STATE`.
+    *   Added a `<provider>` tag with `tools:node="remove"` to disable WorkManager's default initializer, preventing conflicts with the Hilt setup.
 
-1. **Create New Files:** Place the new `.kt` and `.xml` files in their specified paths.
-2. **Update Existing Files:** Apply the outlined modifications to `AndroidManifest.xml`, `KotatsuApp.kt`, `AppModule.kt`, and your main `preferences.xml`.
-3. **Replace Mock Repositories:** This is the **most critical manual step**. In `AppModule.kt`, replace the `MockReadingHistoryRepository`, `MockBookmarkRepository`, etc., with your actual Kotatsu repository implementations. Ensure these repositories return data in the `SyncData` format (e.g., `Map<String, ReadingHistoryItem>`, `List<String>`, `SettingsData`, `LibraryData`).
-4. **Implement `SyncEvent` Triggers:** Go through your application's data modification points (as exemplified in "Modified Core Files" above) and add `SyncRegistry.sendEvent()` calls.
-5. **Add Drawable Assets:** Create or import appropriate drawable icons for the preferences.
-6. **Run Gradle Sync:** Ensure all new dependencies (WorkManager Hilt, Google Drive API) are resolved.
+3.  **`app/src/main/res/xml/pref_root.xml`:**
+    *   Added a `<PreferenceScreen>` entry to link to the new `DriveSyncSettingsFragment` from the main settings menu.
 
-## ▶️ How to Test Locally
+4.  **`app/src/main/res/values/strings.xml`:**
+    *   Added all necessary string resources for the sync settings UI, including titles, summaries, and toast messages.
 
-Refer to the "Testing and Validation" guide above for a comprehensive approach to verifying the sync system's functionality. This includes initial setup, multi-device sync, offline behavior, conflict resolution, and error handling.
+## 🛠️ Critical Integration Steps for the Developer
 
-## 🔮 Future Enhancements
+This module has been added, but requires manual integration with the app's core data logic.
 
-* **Granular Dirty State Tracking:** Instead of `hasUnsyncedLocalChanges` for the entire `SyncData` object, implement dirty flags for `reading_history_dirty`, `bookmarks_dirty`, etc., to allow more efficient partial uploads.
-* **Throttling/Debouncing Events:** Implement a mechanism to prevent `SyncRegistry.sendEvent()` from triggering `syncNow()` too frequently (e.g., debounce reading progress updates, batch multiple small setting changes).
-* **User-Configurable Sync Intervals:** Allow users to choose different periodic sync intervals (e.g., 1 hour, 12 hours) instead of a fixed 6 hours.
-* **Progress Indicators:** Add more detailed progress indicators during `syncNow()` (e.g., "Downloading...", "Merging...", "Uploading...").
-* **Push Notifications for Sync Status:** Optionally notify users when a background sync completes or fails.
-* **Manual Backup/Restore:** Extend the system to allow users to manually save/load specific versions of `kotatsu_sync.encrypted` from a user-accessible Drive folder.
-* **Migration Logic for Schema:** If `schema_version` changes in the future, implement migration logic within the `merge` function to handle older schema versions gracefully.
+1.  **Replace Mock Repositories:** This is the **most critical manual step**. In `di/AppModule.kt`, replace the `binds` for mock repositories (e.g., `MockReadingHistoryRepository`) with your actual Kotatsu repository implementations. Ensure these repositories can provide and receive data in the formats defined in `SyncData.kt`.
+2.  **Implement `SyncEvent` Triggers:** In your `ViewModel`s, `Manager`s, or `Repository` classes that modify user data (e.g., saving reading progress, adding a bookmark), inject `SyncRegistry` and call `SyncRegistry.sendEvent(SyncEvent.<AppropriateEvent>)` after a successful local data update.
+3.  **Verify Drawable Assets:** The created drawables are simple vector placeholders. Replace them with proper Material Design icons or app-specific assets if desired.
