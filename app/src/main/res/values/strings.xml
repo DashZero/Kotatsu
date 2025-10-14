@@ -880,7 +880,7 @@
 	<string name="chapters_load_failed">Failed to load chapter list</string>
 	<string name="telegram_integration">Telegram integration</string>
 
-		<!-- START: ADDED FOR GOOGLE DRIVE SYNC -->
+	<!-- START: ADDED FOR GOOGLE DRIVE SYNC -->
     <string name="pref_header_cloud_sync">Cloud Sync</string>
     <string name="pref_title_connect_google_drive">Connect to Google Drive</string>
     <string name="pref_summary_connect_google_drive_disconnected">Sign in to sync your data</string>
@@ -888,7 +888,6 @@
     <string name="pref_title_auto_sync">Auto Sync</string>
     <string name="pref_summary_auto_sync">Automatically sync data in the background</string>
     <string name="pref_title_sync_now">Sync Now</string>
-    <string name="pref_summary_sync_now">Manually trigger data synchronization</string>
     <string name="pref_title_last_synced">Last Synced</string>
     <string name="pref_summary_never_synced">Never synced</string>
     <string name="pref_summary_last_synced_at">Last synced: %1$s</string>
@@ -897,7 +896,17 @@
     <string name="pref_title_logout_google_drive">Log Out from Google Drive</string>
     <string name="pref_summary_logout_google_drive">Disconnect your Google Drive account</string>
 
-    <!-- Toasts/Snackbars for User Feedback -->
+	<!-- Google Drive Sync Preferences -->
+	<string name="pref_header_google_drive_sync">Google Drive Sync</string>
+	<string name="pref_summary_cloud_sync_status">Displays the latest sync status</string>
+	<string name="pref_title_google_drive_account">Google Account</string>
+	<string name="pref_summary_google_drive_account">Choose the account used for Drive backup &amp; sync</string>
+	<string name="pref_title_enable_google_drive_sync">Enable Google Drive Sync</string>
+	<string name="pref_summary_enable_google_drive_sync">Automatically back up reading history and favourites to Google Drive</string>
+	<string name="pref_title_last_sync_time">Last Synced</string>
+	<string name="pref_summary_last_sync_time">Shows the last successful sync time</string>
+	<string name="pref_action_sync_now">Sync Now</string>
+	<string name="pref_summary_sync_now">Manually trigger cloud sync</string>
     <string name="sync_toast_sync_started">Sync started…</string>
     <string name="sync_toast_sync_successful">Sync completed successfully!</string>
     <string name="sync_toast_sync_failed">Sync failed: %1$s</string>

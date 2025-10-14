@@ -8,7 +8,11 @@ import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.gdrive.models.SyncEvent
 import javax.inject.Inject
 import javax.inject.Singleton
+import dagger.hilt.android.components.ActivityRetainedComponent
+import dagger.hilt.android.scopes.ActivityRetainedScoped
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 @Singleton
 class SettingsSyncTrigger @Inject constructor(
     private val appSettings: AppSettings,

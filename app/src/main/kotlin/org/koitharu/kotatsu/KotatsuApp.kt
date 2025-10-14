@@ -6,6 +6,7 @@ import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import org.koitharu.kotatsu.gdrive.DriveSyncProvider
 import org.koitharu.kotatsu.gdrive.SyncRegistry
+import org.koitharu.kotatsu.gdrive.SettingsSyncTrigger
 import javax.inject.Inject
 
 @HiltAndroidApp

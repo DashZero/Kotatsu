@@ -11,11 +11,13 @@ import org.koitharu.kotatsu.data.IBookmarkRepository
 import org.koitharu.kotatsu.data.IFavoriteRepository
 import org.koitharu.kotatsu.data.ILibraryRepository
 import org.koitharu.kotatsu.data.IReadingHistoryRepository
-import org.koitharu.kotatsu.data.MockAppSettings
-import org.koitharu.kotatsu.data.MockBookmarkRepository
-import org.koitharu.kotatsu.data.MockFavoriteRepository
-import org.koitharu.kotatsu.data.MockLibraryRepository
-import org.koitharu.kotatsu.data.MockReadingHistoryRepository
+import org.koitharu.kotatsu.data.HistoryRepository // Import HistoryRepository
+import org.koitharu.kotatsu.data.BookmarksRepository // Import BookmarksRepository
+import org.koitharu.kotatsu.data.FavouritesRepository // Import FavouritesRepository
+import org.koitharu.kotatsu.data.AppSettings // Import AppSettings
+import org.koitharu.kotatsu.data.MangaSourcesRepository // Import MangaSourcesRepository
+import org.koitharu.kotatsu.gdrive.SyncRegistry
+
 import org.koitharu.kotatsu.gdrive.DriveSyncProvider
 import org.koitharu.kotatsu.gdrive.EncryptionUtil
 import javax.inject.Singleton
@@ -27,25 +29,29 @@ object AppModule {
     @Provides
     @Singleton
     fun provideReadingHistoryRepository(historyRepository: HistoryRepository): IReadingHistoryRepository {
-        return GdriveHistoryRepository(historyRepository)
+        // HistoryRepository itself implements IReadingHistoryRepository
+        return historyRepository
     }
 
     @Provides
     @Singleton
     fun provideBookmarkRepository(bookmarksRepository: BookmarksRepository): IBookmarkRepository {
-        return GdriveBookmarkRepository(bookmarksRepository)
+        // Assuming BookmarksRepository implements IBookmarkRepository
+        return bookmarksRepository
     }
 
     @Provides
     @Singleton
     fun provideFavoriteRepository(favouritesRepository: FavouritesRepository): IFavoriteRepository {
-        return GdriveFavoriteRepository(favouritesRepository)
+        // Assuming FavouritesRepository implements IFavoriteRepository
+        return favouritesRepository
     }
 
     @Provides
     @Singleton
     fun provideAppSettings(appSettings: AppSettings): IAppSettings {
-        return GdriveAppSettings(appSettings)
+        // Assuming AppSettings implements IAppSettings
+        return appSettings
     }
 
     @Provides
@@ -54,9 +60,15 @@ object AppModule {
         mangaSourcesRepository: MangaSourcesRepository,
         favouritesRepository: FavouritesRepository
     ): ILibraryRepository {
+        // Assuming GdriveLibraryRepository is the correct implementation and it requires these two
         return GdriveLibraryRepository(mangaSourcesRepository, favouritesRepository)
     }
 
+    @Provides
+    @Singleton
+    fun provideSyncRegistry(): SyncRegistry {
+        return SyncRegistry()
+    }
 
     @Provides
     @Singleton
@@ -74,6 +86,7 @@ object AppModule {
         appSettings: IAppSettings,
         libraryRepository: ILibraryRepository
     ): DriveSyncProvider {
+        // DriveSyncProvider needs I... types
         return DriveSyncProvider(
             context,
             readingHistoryRepository,

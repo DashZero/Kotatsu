@@ -1,0 +1,9 @@
+{
+  "java.configuration.updateBuildConfiguration": "interactive",
+
+  // new key for the language server
+  "java.jdt.ls.java.home": "/Users/meeh/Library/Java/JavaVirtualMachines/corretto-17.0.16/Contents/Home",
+
+  // still valid for the Gradle extension
+  "gradle.java.home": "/Users/meeh/Library/Java/JavaVirtualMachines/corretto-17.0.16/Contents/Home"
+}
