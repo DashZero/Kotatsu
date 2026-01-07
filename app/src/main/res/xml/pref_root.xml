@@ -45,6 +45,12 @@
         android:title="@string/services" />
 
     <PreferenceScreen
+        android:fragment="org.koitharu.kotatsu.progresssync.ui.ProgressSyncSettingsFragment"
+        android:icon="@drawable/ic_sync"
+        android:key="progress_sync"
+        android:title="@string/progress_sync" />
+
+    <PreferenceScreen
         android:fragment="org.koitharu.kotatsu.settings.userdata.BackupsSettingsFragment"
         android:icon="@drawable/ic_backup_restore"
         android:key="userdata"

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	android:title="@string/progress_sync">
+
+	<Preference
+		android:key="progress_sync_notice"
+		android:selectable="false"
+		android:summary="@string/progress_sync_notice"
+		app:allowDividerAbove="true" />
+
+	<Preference
+		android:key="progress_sync_notice_folder"
+		android:selectable="false"
+		android:summary="@string/progress_sync_notice_folder" />
+
+	<SwitchPreferenceCompat
+		android:defaultValue="false"
+		android:key="progress_sync_enabled"
+		android:title="@string/progress_sync_enabled" />
+
+	<Preference
+		android:key="progress_sync_directory"
+		android:title="@string/progress_sync_directory" />
+
+	<ListPreference
+		android:defaultValue="MANUAL"
+		android:entries="@array/progress_sync_modes"
+		android:entryValues="@array/values_progress_sync_modes"
+		android:key="progress_sync_mode"
+		android:title="@string/progress_sync_mode" />
+
+	<PreferenceCategory
+		android:key="progress_sync_actions"
+		android:title="@string/actions">
+
+		<Preference
+			android:key="progress_sync_export_now"
+			android:title="@string/progress_sync_export_now" />
+
+		<Preference
+			android:key="progress_sync_import_now"
+			android:title="@string/progress_sync_import_now" />
+
+		<Preference
+			android:key="progress_sync_status"
+			android:title="@string/progress_sync_status" />
+	</PreferenceCategory>
+
+	<PreferenceCategory
+		android:key="progress_sync_advanced"
+		android:title="@string/advanced">
+
+		<ListPreference
+			android:defaultValue="HOURS_1"
+			android:entries="@array/progress_sync_intervals"
+			android:entryValues="@array/values_progress_sync_intervals"
+			android:key="progress_sync_interval"
+			android:title="@string/progress_sync_interval"
+			android:summary="%s" />
+
+		<ListPreference
+			android:defaultValue="LAST_WRITE_WINS"
+			android:entries="@array/progress_sync_conflicts"
+			android:entryValues="@array/values_progress_sync_conflicts"
+			android:key="progress_sync_conflict"
+			android:title="@string/progress_sync_conflict_handling"
+			android:summary="%s" />
+
+		<PreferenceCategory
+			android:key="progress_sync_include"
+			android:title="@string/progress_sync_include_in_sync">
+
+			<SwitchPreferenceCompat
+				android:defaultValue="true"
+				android:enabled="false"
+				android:key="progress_sync_include_history"
+				android:title="@string/progress_sync_include_history" />
+
+			<SwitchPreferenceCompat
+				android:defaultValue="false"
+				android:key="progress_sync_include_favorites"
+				android:title="@string/progress_sync_include_favorites" />
+
+			<SwitchPreferenceCompat
+				android:defaultValue="false"
+				android:key="progress_sync_include_bookmarks"
+				android:title="@string/progress_sync_include_bookmarks" />
+		</PreferenceCategory>
+	</PreferenceCategory>
+
+	<PreferenceCategory
+		android:key="progress_sync_device"
+		android:title="@string/progress_sync_device_info"
+		app:allowDividerAbove="true">
+
+		<Preference
+			android:key="progress_sync_device_name"
+			android:title="@string/progress_sync_device_name" />
+
+		<Preference
+			android:key="progress_sync_device_id"
+			android:title="@string/progress_sync_device_id" />
+	</PreferenceCategory>
+</PreferenceScreen>

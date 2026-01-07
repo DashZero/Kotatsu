@@ -565,6 +565,7 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		get() = prefs.getString(KEY_BACKUP_PERIODICAL_OUTPUT, null)?.toUriOrNull()
 		set(value) = prefs.edit { putString(KEY_BACKUP_PERIODICAL_OUTPUT, value?.toString()) }
 
+
 	val isBackupTelegramUploadEnabled: Boolean
 		get() = prefs.getBoolean(KEY_BACKUP_TG_ENABLED, false)
 

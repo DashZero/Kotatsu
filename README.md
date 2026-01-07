@@ -42,6 +42,18 @@ online content sources. The main goal of the fork is to maintain existing featur
     <img src="./metadata/en-US/images/tenInchScreenshots/2.png" alt="Tablet view" width="400"/>
 </div>
 
+### Progress Sync via Google Drive Folder (no Drive API)
+
+Kotatsu-Redo can sync reading progress by exporting a small JSON file to a user-selected folder (for example, a Google Drive
+folder chosen via the system file picker). This uses SAF and the Drive app for file sync, not the Google Drive API.
+
+Manual test steps:
+
+1. Device A: Settings → Reading progress sync → Choose sync folder → enable automatic sync → read a manga and wait ~1 minute.
+2. Verify that `kotatsu_progress_sync.json` appears in the chosen Drive folder.
+3. Device B: choose the same folder → Import now → verify reading progress is updated.
+4. Conflict test: update the same manga on both devices, then import on each; verify the configured conflict mode applies.
+
 ### Contributing
 
 **📌 Pull requests are welcome, if you want:

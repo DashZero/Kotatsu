@@ -33,6 +33,7 @@ class RootSettingsFragment : BasePreferenceFragment(0) {
 		bindPreferenceSummary("downloads", R.string.manga_save_location, R.string.downloads_wifi_only)
 		bindPreferenceSummary("tracker", R.string.track_sources, R.string.notifications_settings)
 		bindPreferenceSummary("services", R.string.suggestions, R.string.sync, R.string.tracking)
+		bindPreferenceSummary("progress_sync", R.string.progress_sync_summary)
 		findPreference<Preference>("about")?.summary = getString(R.string.app_version, BuildConfig.VERSION_NAME)
 	}
 

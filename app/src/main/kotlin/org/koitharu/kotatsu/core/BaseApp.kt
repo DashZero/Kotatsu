@@ -27,6 +27,7 @@ import org.koitharu.kotatsu.core.db.MangaDatabase
 import org.koitharu.kotatsu.core.os.AppValidator
 import org.koitharu.kotatsu.core.os.RomCompat
 import org.koitharu.kotatsu.core.prefs.AppSettings
+import org.koitharu.kotatsu.core.util.ErrorLogger
 import org.koitharu.kotatsu.core.util.ext.processLifecycleScope
 import org.koitharu.kotatsu.local.data.LocalStorageChanges
 import org.koitharu.kotatsu.local.data.index.LocalMangaIndex
@@ -62,6 +63,9 @@ open class BaseApp : Application(), Configuration.Provider {
 	lateinit var workScheduleManager: WorkScheduleManager
 
 	@Inject
+	lateinit var errorLogger: ErrorLogger
+
+	@Inject
 	lateinit var localMangaIndexProvider: Provider<LocalMangaIndex>
 
 	@Inject
@@ -79,6 +83,7 @@ open class BaseApp : Application(), Configuration.Provider {
 		if (ACRA.isACRASenderServiceProcess()) {
 			return
 		}
+		setupUncaughtExceptionLogger()
 		AppCompatDelegate.setDefaultNightMode(settings.theme)
 		// TLS 1.3 support for Android < 10
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -143,6 +148,14 @@ open class BaseApp : Application(), Configuration.Provider {
 	private fun setupActivityLifecycleCallbacks() {
 		activityLifecycleCallbacks.forEach {
 			registerActivityLifecycleCallbacks(it)
+		}
+	}
+
+	private fun setupUncaughtExceptionLogger() {
+		val previous = Thread.getDefaultUncaughtExceptionHandler()
+		Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+			errorLogger.logUncaught(thread, throwable)
+			previous?.uncaughtException(thread, throwable)
 		}
 	}
 }

@@ -144,4 +144,32 @@
 		<item>@string/ask_every_time</item>
 		<item>@string/disable</item>
 	</string-array>
+	<string-array name="progress_sync_modes" translatable="false">
+		<item>@string/progress_sync_mode_manual</item>
+		<item>@string/progress_sync_mode_automatic</item>
+	</string-array>
+	<string-array name="values_progress_sync_modes" translatable="false">
+		<item>MANUAL</item>
+		<item>AUTOMATIC</item>
+	</string-array>
+	<string-array name="progress_sync_intervals" translatable="false">
+		<item>@string/progress_sync_interval_15m</item>
+		<item>@string/progress_sync_interval_1h</item>
+		<item>@string/progress_sync_interval_6h</item>
+		<item>@string/progress_sync_interval_daily</item>
+	</string-array>
+	<string-array name="values_progress_sync_intervals" translatable="false">
+		<item>MINUTES_15</item>
+		<item>HOURS_1</item>
+		<item>HOURS_6</item>
+		<item>DAILY</item>
+	</string-array>
+	<string-array name="progress_sync_conflicts" translatable="false">
+		<item>@string/progress_sync_conflict_last_write_wins</item>
+		<item>@string/progress_sync_conflict_merge</item>
+	</string-array>
+	<string-array name="values_progress_sync_conflicts" translatable="false">
+		<item>LAST_WRITE_WINS</item>
+		<item>MERGE_PER_TITLE</item>
+	</string-array>
 </resources>
